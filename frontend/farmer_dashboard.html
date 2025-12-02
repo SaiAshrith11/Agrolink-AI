@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmer Dashboard — AGROLINK-AI</title>
+
+<style>
+    body { margin:0; background:#e1f4e3; font-family:Segoe UI, sans-serif; }
+    header {
+        background:#1b8a28; color:white; padding:15px;
+        font-size:22px; font-weight:600;
+        display:flex; justify-content:space-between; align-items:center;
+    }
+    .logout {
+        background:#fff; color:#1b8a28;
+        padding:6px 14px; border-radius:8px;
+        cursor:pointer; font-weight:bold;
+        border:2px solid white;
+    }
+    .container { padding:18px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:15px; }
+    .card {
+        background:white; padding:20px; border-radius:14px;
+        box-shadow:0 5px 14px rgba(0,0,0,0.15);
+    }
+    .title { font-weight:700; color:#1b8a28; font-size:17px; }
+    .value { font-size:26px; font-weight:700; margin-top:5px; }
+    .muted { font-size:14px; color:#527f52; margin-top:4px; }
+    .btn {
+        margin-top:12px; background:#1b8a28; color:white;
+        padding:12px; width:100%; border:none; border-radius:10px;
+        font-size:16px; cursor:pointer;
+    }
+    .btn:hover { background:#166d20; }
+    #mandiList div { margin:5px 0; }
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>🌾 Farmer Dashboard</div>
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+    <!-- SENSOR CARDS -->
+    <h2>🌦 Live Farm Sensor Data</h2>
+    <div class="grid">
+        <div class="card">
+            <div class="title">🌡 Temperature</div>
+            <div class="value" id="tempVal">-- °C</div>
+            <div class="muted" id="tempHint"></div>
+        </div>
+
+        <div class="card">
+            <div class="title">💧 Soil Moisture</div>
+            <div class="value" id="moistVal">-- %</div>
+            <div class="muted" id="moistHint"></div>
+        </div>
+
+        <div class="card">
+            <div class="title">🌿 NPK Nutrients</div>
+            <div class="value" id="npkVal">-- mg/kg</div>
+            <div class="muted" id="npkHint"></div>
+        </div>
+
+        <div class="card">
+            <div class="title">🧪 Soil pH</div>
+            <div class="value" id="phVal">--</div>
+            <div class="muted" id="phHint"></div>
+        </div>
+    </div>
+
+
+    <!-- ML MODEL CARDS -->
+    <h2 style="margin-top:25px;">🤖 AI / ML Predictions</h2>
+    <div class="grid">
+
+        <div class="card">
+            <div class="title">📈 Yield Prediction</div>
+            <div class="value" id="yieldVal">-- %</div>
+            <div class="muted">Based on AI model</div>
+        </div>
+
+        <div class="card">
+            <div class="title">🧾 Fertilizer Suggestion</div>
+            <div class="value" id="fertSuggest">--</div>
+            <div class="muted">AI-based recommendation</div>
+        </div>
+
+        <div class="card">
+            <div class="title">🌿 Farm Condition Status</div>
+            <div class="value" id="farmStatus">--</div>
+            <div class="muted" id="farmStatusHint"></div>
+        </div>
+
+    </div>
+
+
+    <!-- IMAGE QUALITY PREDICTION -->
+    <h2 style="margin-top:25px;">🖼 Produce Quality Prediction</h2>
+    <div class="card">
+        <input type="file" id="produceImage" accept="image/*" style="margin-bottom:12px;">
+        <button class="btn" onclick="predictQuality()">Check Quality</button>
+        <div id="qualityResult" class="muted" style="margin-top:8px;"></div>
+    </div>
+
+
+    <!-- PRICE PREDICTION -->
+    <h2 style="margin-top:25px;">💰 Price Prediction</h2>
+<div class="card">
+    <div class="title">💰 Predicted Market Price</div>
+
+    <div class="value" id="priceVal">-- ₹/kg</div>
+
+    <button class="btn" onclick="predictPrice()">Predict Price</button>
+
+    <div class="muted">AI-based dynamic price estimation</div>
+</div>
+
+
+
+    <!-- SELL PRODUCE -->
+    <button class="btn" onclick="window.location.href='sell_produce.html'">📦 Sell Produce</button>
+
+
+    <!-- LIVE MANDI PRICES -->
+    <h2 style="margin-top:30px;">📉 Live Mandi Prices (Your Region)</h2>
+    <div class="card" id="mandiList">Loading...</div>
+
+</div>
+
+<script>
+// ---------------------- PROTECT PAGE ------------------------
+const user = JSON.parse(localStorage.getItem("agro_user"));
+if (!user || user.role !== "farmer") window.location.href = "login.html";
+
+function logout() {
+    localStorage.removeItem("agro_user");
+    window.location.href = "login.html";
+}
+
+// ---------------------- SENSOR VALUES (simulate until backend) ----------------------
+let sensors = {
+    temp: 28,
+    moisture: 45,
+    npk: 380,
+    ph: 6.7
+};
+
+// Update UI
+function updateSensorUI() {
+
+    document.getElementById("tempVal").innerText = sensors.temp + " °C";
+    document.getElementById("tempHint").innerText =
+        sensors.temp < 20 ? "Cold — protect crops" :
+        sensors.temp < 32 ? "Optimal" : "Too hot — add shade";
+
+    document.getElementById("moistVal").innerText = sensors.moisture + " %";
+    document.getElementById("moistHint").innerText =
+        sensors.moisture < 30 ? "Low moisture — irrigate soon" :
+        sensors.moisture < 55 ? "Perfect moisture" : "Too high — check drainage";
+
+    document.getElementById("npkVal").innerText = sensors.npk + " mg/kg";
+    document.getElementById("npkHint").innerText =
+        sensors.npk < 250 ? "Low NPK — add nutrients" :
+        sensors.npk < 600 ? "Optimal nutrients" : "NPK too high";
+
+    document.getElementById("phVal").innerText = sensors.ph;
+    document.getElementById("phHint").innerText =
+        sensors.ph < 5.5 ? "Too acidic — add lime" :
+        sensors.ph <= 7.5 ? "Perfect pH" : "Too alkaline — add compost";
+
+    // ML Predictions (simulate)
+    document.getElementById("yieldVal").innerText =
+        Math.round((sensors.moisture + sensors.temp + sensors.npk / 10) / 4) + " %";
+
+    document.getElementById("fertSuggest").innerText =
+        sensors.npk < 300 ? "Add Nitrogen-rich fertilizer" :
+        sensors.moisture < 30 ? "Irrigate before fertilizing" :
+        "Balanced NPK recommended";
+
+    // Farm condition
+    let score = 0;
+    if (sensors.moisture >= 35 && sensors.moisture <= 55) score++;
+    if (sensors.temp >= 20 && sensors.temp <= 32) score++;
+    if (sensors.ph >= 6 && sensors.ph <= 7.5) score++;
+    if (sensors.npk >= 300 && sensors.npk <= 600) score++;
+
+    let status = score >= 3 ? "🟢 GOOD" : score === 2 ? "🟡 MODERATE" : "🔴 POOR";
+    let hint = score >= 3 ? "Farm conditions are healthy" :
+               score === 2 ? "Some parameters need attention" :
+               "Multiple problems detected";
+
+    document.getElementById("farmStatus").innerText = status;
+    document.getElementById("farmStatusHint").innerText = hint;
+}
+
+// IMG QUALITY
+function predictQuality() {
+    const img = document.getElementById("produceImage").files[0];
+    if (!img) {
+        document.getElementById("qualityResult").innerText = "Upload an image first.";
+        return;
+    }
+
+    document.getElementById("qualityResult").innerText =
+        "Quality: HIGH (simulated — will connect to ML API)";
+}
+function predictPrice() {
+    const predicted =
+        Math.round((sensors.temp * 2 + sensors.moisture + sensors.npk / 20 + sensors.ph * 5) * 1.1);
+
+    document.getElementById("priceVal").innerText = "₹ " + predicted + " /kg";
+}
+
+
+// LIVE MANDI PRICES
+function loadMandiPrices() {
+    const mandiDiv = document.getElementById("mandiList");
+    mandiDiv.innerHTML = `
+        <div>Tomato — ₹ ${20 + Math.round(Math.random()*20)}/kg</div>
+        <div>Chilli — ₹ ${60 + Math.round(Math.random()*10)}/kg</div>
+        <div>Cabbage — ₹ ${18 + Math.round(Math.random()*8)}/kg</div>
+        <div>Potato — ₹ ${22 + Math.round(Math.random()*6)}/kg</div>
+    `;
+}
+
+updateSensorUI();
+loadMandiPrices();
+</script>
+
+</body>
+</html>

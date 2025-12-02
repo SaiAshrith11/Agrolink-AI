@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sell Produce — AGROLINK-AI</title>
+
+<style>
+  body{margin:0;background:#e8f7e8;font-family:Segoe UI,Arial,Helvetica,sans-serif}
+  header{background:#1b8a28;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:20px}
+
+  /* BACK BUTTON */
+  .backBtn{
+      background:white;
+      color:#1b8a28;
+      border:none;
+      padding:8px 14px;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+  }
+
+  .wrap{padding:20px;max-width:1100px;margin:auto}
+  h2{color:#1b8a28;margin-top:25px}
+
+  .card{background:white;padding:16px;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,0.08);margin-top:10px}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{padding:10px;text-align:left;border-bottom:1px solid #e2e2e2}
+  th{background:#e9ffe9}
+
+  input{padding:10px;border-radius:8px;border:1px solid #bcd9bc;width:100%;margin-bottom:10px}
+  button{padding:10px 12px;border:none;border-radius:8px;background:#1b8a28;color:white;font-weight:700;cursor:pointer}
+
+  .btn-small{padding:6px 10px;border-radius:6px;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📦 Sell Produce — AGROLINK-AI</h1>
+
+  <!-- ⭐ REPLACED LOGOUT WITH BACK BUTTON ⭐ -->
+  <button class="backBtn" onclick="goBack()">⬅ Back</button>
+</header>
+
+<div class="wrap">
+
+  <!-- ADD PRODUCE -->
+  <h2>➕ List Your Produce</h2>
+  <div class="card">
+    <input id="pname" placeholder="Product Name" />
+    <input id="pqty" type="number" placeholder="Quantity (kg)" />
+    <input id="pprice" type="number" placeholder="Price per kg (₹)" />
+    <button onclick="addProduce()">Add Produce</button>
+  </div>
+
+  <!-- PRODUCE LIST -->
+  <h2>📦 Listed Produce</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Product</th><th>Qty</th><th>Price</th></tr>
+      </thead>
+      <tbody id="produceList"></tbody>
+    </table>
+  </div>
+
+  <!-- RECEIVED ORDERS -->
+  <h2>📨 Received Orders</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Total</th>
+          <th>Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="orderList"></tbody>
+    </table>
+  </div>
+
+  <!-- SALES HISTORY -->
+  <h2>📊 Recent Sales (Last 5)</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Product</th><th>Qty</th><th>Total</th><th>Date</th></tr>
+      </thead>
+      <tbody id="salesHistory"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+// LOGIN PROTECTION
+const user = JSON.parse(localStorage.getItem("agro_user"));
+if (!user || user.role !== "farmer") {
+    window.location.href = "login.html";
+}
+
+// ⭐ GO BACK TO FARMER DASHBOARD ⭐
+function goBack(){
+    window.location.href = "farmer_dashboard.html";
+}
+
+let farmerProducts = JSON.parse(localStorage.getItem("farmer_products") || "[]");
+let orders = JSON.parse(localStorage.getItem("consumer_orders") || "[]");
+let sales = JSON.parse(localStorage.getItem("sales_history") || "[]");
+
+// ADD PRODUCE
+function addProduce() {
+    const name = document.getElementById("pname").value.trim();
+    const qty = Number(document.getElementById("pqty").value);
+    const price = Number(document.getElementById("pprice").value);
+
+    if (!name || !qty || !price) {
+        alert("Please fill all fields");
+        return;
+    }
+
+    farmerProducts.push({ name, qty, price });
+    localStorage.setItem("farmer_products", JSON.stringify(farmerProducts));
+
+    document.getElementById("pname").value = "";
+    document.getElementById("pqty").value = "";
+    document.getElementById("pprice").value = "";
+
+    renderProduce();
+}
+
+// ACCEPT ORDER
+function acceptOrder(index) {
+    const order = orders[index];
+
+    // reduce stock
+    const product = farmerProducts.find(p => p.name.toLowerCase() === order.product.toLowerCase());
+    if (product) {
+        product.qty = Math.max(product.qty - order.qty, 0);
+        localStorage.setItem("farmer_products", JSON.stringify(farmerProducts));
+    }
+
+    // save to sales
+    sales.push({
+        product: order.product,
+        qty: order.qty,
+        total: order.total,
+        date: new Date().toLocaleString()
+    });
+    localStorage.setItem("sales_history", JSON.stringify(sales));
+
+    // mark accepted
+    orders[index].status = "ACCEPTED";
+    localStorage.setItem("consumer_orders", JSON.stringify(orders));
+
+    renderOrders();
+    renderProduce();
+    renderSales();
+
+    alert("Order Accepted!");
+}
+
+function renderProduce() {
+    const tbody = document.getElementById("produceList");
+    tbody.innerHTML = "";
+    farmerProducts.forEach(p => {
+        tbody.innerHTML += `
+            <tr><td>${p.name}</td><td>${p.qty}</td><td>₹ ${p.price}</td></tr>
+        `;
+    });
+}
+
+function renderOrders() {
+    const tbody = document.getElementById("orderList");
+    tbody.innerHTML = "";
+
+    orders.forEach((o, i) => {
+        tbody.innerHTML += `
+            <tr>
+                <td>${o.product}</td>
+                <td>${o.qty}</td>
+                <td>₹ ${o.total}</td>
+                <td>${o.date}</td>
+                <td>
+                    ${o.status === "ACCEPTED"
+                        ? "<span style='color:green;font-weight:700;'>Accepted</span>"
+                        : `<button class='btn-small' onclick='acceptOrder(${i})'>Accept</button>`}
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderSales() {
+    const tbody = document.getElementById("salesHistory");
+    tbody.innerHTML = "";
+
+    sales.slice(-5).reverse().forEach(s => {
+        tbody.innerHTML += `
+            <tr><td>${s.product}</td><td>${s.qty}</td><td>₹ ${s.total}</td><td>${s.date}</td></tr>
+        `;
+    });
+}
+
+renderProduce();
+renderOrders();
+renderSales();
+</script>
+
+</body>
+</html>

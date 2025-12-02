@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGROLINK-AI — Login</title>
+
+<style>
+    body { margin:0;background:#e1f4e3;font-family:Segoe UI, sans-serif;display:flex;justify-content:center;align-items:center;height:100vh; }
+    .container{background:white;width:350px;padding:25px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.15);text-align:center;}
+    .logo{font-size:40px;}
+    .title{font-size:25px;font-weight:700;color:#1b8a28;margin-bottom:10px;}
+    .input-box,.select-box{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:1px solid #b7d8b9;font-size:15px;}
+    .btn{width:100%;padding:12px;margin-top:18px;background:#1b8a28;color:white;border:none;border-radius:8px;font-size:17px;cursor:pointer;}
+    .btn:hover{background:#166d20;}
+</style>
+</head>
+
+<body>
+<div class="container">
+    <div class="logo">🌾</div>
+    <div class="title">AGROLINK-AI</div>
+
+    <form id="loginForm">
+        <input id="username" class="input-box" placeholder="Username" required>
+        <input id="password" type="password" class="input-box" placeholder="Password" required>
+
+        <select id="role" class="select-box">
+            <option value="farmer">👨‍🌾 Farmer</option>
+            <option value="consumer">🧑‍🤝‍🧑 Consumer</option>
+        </select>
+
+        <button class="btn" type="submit">Login</button>
+    </form>
+</div>
+
+<script>
+// If already logged in, skip login page
+if (localStorage.getItem("agro_user")) {
+    const user = JSON.parse(localStorage.getItem("agro_user"));
+    if (user.role === "farmer") window.location.href = "farmer_dashboard.html";
+    else window.location.href = "consumer_dashboard.html";
+}
+
+document.getElementById("loginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const role = document.getElementById("role").value;
+
+    localStorage.setItem("agro_user", JSON.stringify({ username, role }));
+
+    if (role === "farmer") window.location.href = "farmer_dashboard.html";
+    else window.location.href = "consumer_dashboard.html";
+});
+</script>
+
+</body>
+</html>
