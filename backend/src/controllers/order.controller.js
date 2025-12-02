@@ -1,6 +1,6 @@
 // src/controllers/order.controller.js
 const Order = require('../models/Order');
-const Product = require('../models/products');
+const Product = require('../models/Product');
 const Sale = require('../models/sale');
 const Joi = require('joi');
 
