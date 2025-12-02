@@ -15,6 +15,8 @@ const orderRoutes = require('./routes/orders.routes');
 const sensorRoutes = require('./routes/sensors.routes');
 const salesRoutes = require('./routes/sales.routes');
 const mlRoutes = require('./routes/ml.routes');
+const path = require("path");
+
 
 const PORT = process.env.PORT || 4000;
 
@@ -37,6 +39,13 @@ const PORT = process.env.PORT || 4000;
 
   // Static uploads
   app.use('/uploads', express.static(path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads')));
+  // Serve frontend static files
+app.use(express.static(path.join(__dirname, "../frontend")));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/login.html"));
+});
+
+
 
   // API routes
   app.use('/api/auth', authRoutes);
