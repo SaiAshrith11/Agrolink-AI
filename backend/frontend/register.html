@@ -1,20 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — AGROLINK-AI</title>
+<style>
+    body { margin:0;background:#e1f4e3;font-family:Segoe UI, sans-serif;display:flex;justify-content:center;align-items:center;height:100vh; }
+    .container{background:white;width:350px;padding:25px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.15);text-align:center;}
+    .title{font-size:25px;font-weight:700;color:#1b8a28;margin-bottom:10px;}
+    .input-box,.select-box{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:1px solid #b7d8b9;font-size:15px;}
+    .btn{width:100%;padding:12px;margin-top:18px;background:#1b8a28;color:white;border:none;border-radius:8px;font-size:17px;cursor:pointer;}
+</style>
+</head>
+
 <body>
-<h2>Create User</h2>
+<div class="container">
+    <div class="title">Create Account</div>
 
-<form action="https://agrolink-ai-1.onrender.com/api/auth/register" method="POST">
-  <label>Username:</label><br>
-  <input name="username" value="farmer1"><br><br>
+    <form id="regForm">
+        <input id="username" class="input-box" placeholder="Username" required>
+        <input id="password" type="password" class="input-box" placeholder="Password" required>
 
-  <label>Password:</label><br>
-  <input name="password" value="test1234"><br><br>
+        <select id="role" class="select-box">
+            <option value="farmer">Farmer</option>
+            <option value="consumer">Consumer</option>
+        </select>
 
-  <label>Role:</label><br>
-  <input name="role" value="farmer"><br><br>
+        <button class="btn" type="submit">Register</button>
+    </form>
+</div>
 
-  <button type="submit">Register</button>
-</form>
+<script>
+const API = "https://agrolink-ai-1.onrender.com/api/auth/register";
+
+document.getElementById("regForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const role = document.getElementById("role").value;
+
+    const res = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, role })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) return alert(data.error || "Registration failed");
+
+    alert("Account created! Now login.");
+    window.location.href = "login.html";
+});
+</script>
 
 </body>
 </html>
