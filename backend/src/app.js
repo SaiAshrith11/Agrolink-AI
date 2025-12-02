@@ -1,7 +1,7 @@
 // src/app.js
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
+const path = require("path");
 const morgan = require('morgan');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -15,7 +15,6 @@ const orderRoutes = require('./routes/orders.routes');
 const sensorRoutes = require('./routes/sensors.routes');
 const salesRoutes = require('./routes/sales.routes');
 const mlRoutes = require('./routes/ml.routes');
-const path = require("path");
 
 
 const PORT = process.env.PORT || 4000;
