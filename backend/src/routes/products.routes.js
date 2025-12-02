@@ -1,7 +1,7 @@
 // src/routes/products.routes.js
 const express = require('express');
 const router = express.Router();
-const productCtrl = require('../controllers/product.controller');
+const productCtrl = require('../controllers/products.controller');
 const { auth, requireRole } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
