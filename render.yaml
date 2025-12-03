@@ -1,0 +1,7 @@
+services:
+  - name: agrolink-backend
+    type: web
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node src/app.js
+    autoDeploy: true
