@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const productCtrl = require("../controllers/products.controller");
+const productCtrl = require("../controllers/productCtrl");
+
 const auth = require("../middleware/auth");
 
 // FARMER
