@@ -1,9 +1,6 @@
 // backend/frontend/js/register.js
-const API = (function(){
-  // use relative origin for same-host deployment, or override if needed
-  const base = window.location.origin; // e.g. https://agrolink-ai-1.onrender.com
-  return base + "/api/auth";
-})();
+const API = "https://agrolink-ai-1.onrender.com/api/auth";
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("registerForm");
