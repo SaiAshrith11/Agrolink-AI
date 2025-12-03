@@ -2,9 +2,7 @@
 const Product = require('../models/Product');
 const Joi = require('joi');
 
-/**
- * CREATE PRODUCT (Farmer)
- */
+/** CREATE PRODUCT */
 exports.createProduct = async (req, res, next) => {
   try {
     const schema = Joi.object({
@@ -31,9 +29,7 @@ exports.createProduct = async (req, res, next) => {
   }
 };
 
-/**
- * LIST ALL PRODUCTS (Consumer)
- */
+/** LIST ALL PRODUCTS */
 exports.listAll = async (req, res, next) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -43,9 +39,7 @@ exports.listAll = async (req, res, next) => {
   }
 };
 
-/**
- * LIST PRODUCTS BY FARMER
- */
+/** LIST MY PRODUCTS */
 exports.myProducts = async (req, res, next) => {
   try {
     const prods = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
@@ -55,9 +49,7 @@ exports.myProducts = async (req, res, next) => {
   }
 };
 
-/**
- * UPDATE STOCK (qty)
- */
+/** UPDATE STOCK */
 exports.updateStock = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -78,18 +70,15 @@ exports.updateStock = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE PRODUCT
- */
+/** DELETE PRODUCT */
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const userId = req.user.id;
+    const productId = req.params.id;
 
-    const product = await Product.findById(id);
+    const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    if (product.farmer.toString() !== userId.toString()) {
+    if (product.farmer.toString() !== req.user.id.toString()) {
       return res.status(403).json({ error: "Forbidden — not your product" });
     }
 
