@@ -1,5 +1,5 @@
 // backend/frontend/js/farmer.js
-// Handles farmer dashboard UI, sensors simulation, voice, products (local + backend fallback)
+// Handles farmer dashboard UI, sensors simulation, voice commands, and produce loading
 
 (async () => {
 
@@ -21,6 +21,7 @@
   const micBtn = document.getElementById("micBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const openSellBtn = document.getElementById("openSellBtn");
+
   const predictYieldBtn = document.getElementById("predictYieldBtn");
   const predictPriceBtn = document.getElementById("predictPriceBtn");
   const predictFertBtn = document.getElementById("predictFertBtn");
@@ -36,10 +37,9 @@
       deleteConfirm: "Are you sure?",
       noProducts: "No products listed yet."
     },
-
     "hi-IN": {
       listenStart: "सुन रहा हूँ...",
-      listenStop: "सुनना बंद",
+      listenStop: "रुक गया",
       commandNotFound: "कमान्ड समझ में नहीं आया",
       deleted: "हटाया गया",
       deleteConfirm: "क्या आप सुनिश्चित हैं?",
@@ -49,7 +49,7 @@
 
   function applyTranslations(lang) {
     const dict = DICT[lang] || DICT["en-IN"];
-    document.querySelectorAll("[data-i18n]").forEach((el) => {
+    document.querySelectorAll("[data-i18n]").forEach(el => {
       const key = el.getAttribute("data-i18n");
       if (dict[key]) el.innerText = dict[key];
     });
@@ -66,7 +66,7 @@
     if (recognition) recognition.lang = langSelect.value;
   });
 
-  // Speech recognition
+  // === SPEECH RECOGNITION FIXED ===
   let recognition = null;
   let isListening = false;
 
@@ -75,31 +75,43 @@
 
     if (WebSpeech) {
       recognition = new WebSpeech();
-      recognition.lang = langSelect.value;
       recognition.interimResults = false;
       recognition.maxAlternatives = 1;
+      recognition.lang = langSelect.value;
 
       recognition.onstart = () => {
         isListening = true;
         micBtn.innerText = "🎙️";
-        speak(DICT[langSelect.value].listenStart);
+        console.log("voice: started listening");
+      };
+
+      recognition.onresult = (ev) => {
+        const text = ev.results[0][0].transcript.trim().toLowerCase();
+        console.log("VOICE TEXT:", text, "confidence:", ev.results[0][0].confidence);
+
+        handleVoiceCommand(text);
       };
 
       recognition.onend = () => {
         isListening = false;
         micBtn.innerText = "🎤";
-        speak(DICT[langSelect.value].listenStop);
+        console.log("voice: ended listening");
       };
 
-      recognition.onresult = (ev) => {
-        const text = ev.results[0][0].transcript.trim().toLowerCase();
-        console.log("VOICE TEXT:", text);
-        handleVoiceCommand(text);
+      recognition.onerror = (e) => {
+        console.error("voice error:", e);
       };
+
+      recognition.onnomatch = () => {
+        console.log("voice: no match");
+      };
+
     } else {
       micBtn.style.display = "none";
     }
-  } catch (e) {
+
+  } catch (err) {
+    console.error("speech init failed:", err);
     micBtn.style.display = "none";
   }
 
@@ -108,19 +120,19 @@
     if (isListening) recognition.stop();
     else recognition.start();
   }
-
   micBtn.addEventListener("click", toggleMic);
 
+  // === TTS ===
   function speak(text) {
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = langSelect.value;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
-    } catch (e) {}
+    } catch {}
   }
 
-  // ⭐ BIG UPDATE — Expanded voice commands
+  // === FIXED: EXPANDED VOICE COMMANDS + SMART MATCHING ===
   const COMMANDS = {
     "en-IN": {
       openSell: [
@@ -128,79 +140,73 @@
         "open sale produce",
         "open cell produce",
         "open self produce",
-        "open the sell produce",
-        "open the sell produce page",
         "sell produce",
+        "open sell",
+        "go to sell",
         "go to sell produce",
         "go to sale produce",
-        "open sell"
+        "open the sell produce",
+        "open sell produce page"
       ],
-      predictPrice: [
-        "predict price",
-        "predict the price",
-        "price prediction"
-      ],
-      checkQuality: [
-        "check quality",
-        "check produce quality"
-      ],
-      logout: [
-        "logout",
-        "log out",
-        "sign out"
-      ]
+      predictPrice: ["predict price", "price prediction", "predict the price"],
+      checkQuality: ["check quality", "produce quality", "quality check"],
+      logout: ["logout", "log out", "sign out"]
     },
 
     "hi-IN": {
-      openSell: [
-        "बेचने",
-        "बेचो",
-        "सेल पेज",
-        "सेल पेज खोलो"
-      ],
-      predictPrice: [
-        "कीमत बताओ",
-        "कीमत",
-        "कीमत अनुमान"
-      ],
-      checkQuality: [
-        "गुणवत्ता",
-        "quality check",
-        "quality"
-      ],
-      logout: [
-        "लॉग आउट",
-        "बाहर निकलो"
-      ]
+      openSell: ["बेचने", "बेचो", "सेल पेज", "सेल खोलो"],
+      predictPrice: ["कीमत", "कीमत बताओ"],
+      checkQuality: ["गुणवत्ता", "गुणवत्ता जाँच"],
+      logout: ["लॉग आउट", "बाहर निकलो"]
     }
   };
+
+  // smart matching
+  function normalize(s) {
+    return s.replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+  }
+
+  function matchesAny(text, arr) {
+    text = normalize(text);
+    const tokens = text.split(" ");
+
+    return arr.some(cmd => {
+      const c = normalize(cmd);
+      const ctokens = c.split(" ");
+
+      // match ANY token
+      if (ctokens.some(t => tokens.includes(t))) return true;
+
+      // match full phrase
+      if (text.includes(c)) return true;
+
+      return false;
+    });
+  }
 
   function handleVoiceCommand(text) {
     const lang = langSelect.value;
     const cmds = COMMANDS[lang] || COMMANDS["en-IN"];
 
-    const matches = (arr) =>
-      arr.some((cmd) => text.replace(/\s+/g, " ").includes(cmd));
-
-    if (matches(cmds.openSell)) {
-      speak("Opening sell produce");
+    if (matchesAny(text, cmds.openSell)) {
+      speak("Opening sell produce page");
       openSellPage();
       return;
     }
 
-    if (matches(cmds.predictPrice)) {
+    if (matchesAny(text, cmds.predictPrice)) {
       speak("Predicting price");
       predictPrice();
       return;
     }
 
-    if (matches(cmds.checkQuality)) {
+    if (matchesAny(text, cmds.checkQuality)) {
       speak("Checking quality");
       checkQuality();
       return;
     }
 
-    if (matches(cmds.logout)) {
+    if (matchesAny(text, cmds.logout)) {
       speak("Logging out");
       logout();
       return;
@@ -209,19 +215,22 @@
     speak(DICT[lang].commandNotFound);
   }
 
-  // navigation
-  function openSellPage() {
-    window.location.href = "sell_produce.html";
-  }
-  openSellBtn.addEventListener("click", openSellPage);
-
+  // logout
   function logout() {
     localStorage.removeItem("agro_user");
     window.location.href = "login.html";
   }
   logoutBtn.addEventListener("click", logout);
 
-  // Sensors simulation
+  // open sell produce page
+  function openSellPage() {
+    window.location.href = "sell_produce.html";
+  }
+  openSellBtn.addEventListener("click", openSellPage);
+
+  // ========================
+  // SENSOR SIMULATION + UI
+  // ========================
   let sensors = { temp: 28, moisture: 45, npk: 380, ph: 6.7 };
 
   function updateSensorUI() {
@@ -236,13 +245,14 @@
     if (sensors.ph >= 6 && sensors.ph <= 7.5) score++;
     if (sensors.npk >= 300 && sensors.npk <= 600) score++;
 
-    const status =
-      score >= 3 ? "🟢 GOOD" : score === 2 ? "🟡 MODERATE" : "🔴 POOR";
+    const status = score >= 3 ? "🟢 GOOD" :
+                   score === 2 ? "🟡 MODERATE" :
+                                  "🔴 POOR";
 
     document.getElementById("farmCondition").innerText = status;
     document.getElementById("yieldValue").innerText =
-      Math.round((sensors.moisture + sensors.temp + sensors.npk / 10) / 4) +
-      "%";
+      Math.round((sensors.moisture + sensors.temp + sensors.npk / 10) / 4) + "%";
+
     document.getElementById("fertValue").innerText =
       sensors.npk < 300
         ? "Add Nitrogen-rich fertilizer"
@@ -250,6 +260,7 @@
   }
 
   updateSensorUI();
+
   setInterval(() => {
     sensors.temp = 20 + Math.round(Math.random() * 12);
     sensors.moisture = 30 + Math.round(Math.random() * 40);
@@ -258,7 +269,10 @@
     updateSensorUI();
   }, 6000);
 
-  // product loading from server/local
+  // ========================
+  // LOAD PRODUCTS
+  // ========================
+
   async function fetchMyProducts() {
     const urls = [
       API + "/products/my-products",
@@ -271,21 +285,18 @@
         const res = await fetch(u, {
           headers: token ? { Authorization: "Bearer " + token } : {}
         });
+
         if (res.ok) return await res.json();
-      } catch (e) {}
+      } catch {}
     }
 
     return JSON.parse(localStorage.getItem("farmer_products") || "[]");
   }
 
   function escapeHtml(s) {
-    return (s || "").toString().replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;"
-    }[c]));
+    return (s || "").toString().replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
   }
 
   async function loadProducts() {
@@ -303,7 +314,7 @@
       return;
     }
 
-    prods.forEach((p) => {
+    prods.forEach(p => {
       const div = document.createElement("div");
       div.className = "prod";
 
@@ -321,16 +332,12 @@
       const edit = document.createElement("button");
       edit.className = "btn small";
       edit.textContent = "Edit";
-      edit.addEventListener("click", () =>
-        alert("Edit coming soon (use Sell Produce page)")
-      );
+      edit.addEventListener("click", () => alert("Edit from Sell Produce page"));
 
       const del = document.createElement("button");
       del.className = "danger small";
       del.textContent = "Delete";
-      del.addEventListener("click", () =>
-        deleteProduct(p._id || p.id || "")
-      );
+      del.addEventListener("click", () => deleteProduct(p._id || p.id || ""));
 
       actions.appendChild(edit);
       actions.appendChild(del);
@@ -356,22 +363,21 @@
         });
 
         if (res && res.ok) {
-          speak(DICT[langSelect.value].deleted + "");
+          speak(DICT[langSelect.value].deleted);
           await loadProducts();
           return;
         }
-      } catch (e) {}
+      } catch {}
     }
 
     // fallback local
     let local = JSON.parse(localStorage.getItem("farmer_products") || "[]");
-    local = local.filter((p) => (p._id || p.id || "") !== id);
+    local = local.filter(p => (p._id || p.id || "") !== id);
     localStorage.setItem("farmer_products", JSON.stringify(local));
-
     await loadProducts();
   }
 
-  // predictions
+  // calculate predictions
   function predictPrice() {
     const p =
       Math.round(
@@ -404,7 +410,7 @@
   predictFertBtn.addEventListener("click", predictFertilizer);
   checkQualityBtn.addEventListener("click", checkQuality);
 
-  // load products initially
+  // load initial products
   loadProducts();
 
 })();
