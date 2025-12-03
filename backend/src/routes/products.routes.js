@@ -24,5 +24,8 @@ router.post('/', auth, requireRole('farmer'), upload.single('image'), productCtr
 router.get('/mine', auth, requireRole('farmer'), productCtrl.listByFarmer);
 router.get('/', productCtrl.listAll);
 router.put('/:id/stock', auth, requireRole('farmer'), productCtrl.updateStock);
+router.delete('/:id', auth, productCtrl.deleteProduct);
+// after other imports
+router.get('/my', auth, productCtrl.myProducts);
 
 module.exports = router;

@@ -65,4 +65,45 @@ exports.updateStock = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+// backend/src/controllers/products.controller.js
+const Product = require('../models/Product');
+
+/**
+ * DELETE /api/products/:id
+ * Only farmer who owns the product can delete it.
+ */
+exports.deleteProduct = async (req, res, next) => {
+  try {
+    const productId = req.params.id;
+    const userId = req.user && req.user.id;
+
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const product = await Product.findById(productId);
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // check ownership
+    if (product.farmer.toString() !== userId.toString()) {
+      return res.status(403).json({ error: 'Forbidden — you can only delete your own products' });
+    }
+
+    await product.deleteOne();
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (err) {
+    next(err);
+  }
+};
+// returns products created by the authenticated farmer
+exports.myProducts = async (req, res, next) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const prods = await Product.find({ farmer: userId }).sort({ createdAt: -1 });
+    res.json(prods);
+  } catch (err) {
+    next(err);
+  }
+};
+
 };
