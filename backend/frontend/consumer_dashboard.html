@@ -42,6 +42,8 @@
 
   <!-- CART SECTION -->
   <h2>🛒 Your Cart</h2>
+  <button class="btn" style="background:#b30000;margin-bottom:10px" onclick="clearCart()">Clear Cart</button>
+
   <div class="card">
     <div id="cartItems"></div>
     <button class="btn" onclick="placeOrder()">Place Order</button>
@@ -111,6 +113,20 @@ function addToCart(i){
 
     localStorage.setItem("consumer_cart", JSON.stringify(cart));
     renderCart();
+    function removeFromCart(index){
+    cart.splice(index, 1);   // delete item by index
+    localStorage.setItem("consumer_cart", JSON.stringify(cart));
+    renderCart();
+    alert("Item removed from cart");
+}
+// ---------------- REMOVE FROM CART ----------------
+function removeFromCart(index){
+    cart.splice(index, 1);
+    localStorage.setItem("consumer_cart", JSON.stringify(cart));
+    renderCart();
+    alert("Item removed from cart");
+}
+
 }
 
 // ---------------- RENDER CART ----------------
@@ -120,20 +136,68 @@ function renderCart(){
 
     let total = 0;
 
+    if (cart.length === 0) {
+        box.innerHTML = "<div class='muted'>Cart empty</div>";
+        return;
+    }
+
     cart.forEach((c,i)=>{
         const itemTotal = c.qty * c.price;
         total += itemTotal;
 
         box.innerHTML += `
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
-                <div>${c.name} x ${c.qty}</div>
-                <div>₹ ${itemTotal}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                
+                <div>
+                    ${c.name} x ${c.qty}
+                    <br><span style="color:#527f52;font-size:13px;">₹ ${itemTotal}</span>
+                </div>
+
+                <div style="display:flex;gap:8px">
+                  <button 
+                      onclick="removeFromCart(${i})"
+                      style="
+                          background:#ff4d4f;
+                          color:white;
+                          border:none;
+                          padding:6px 10px;
+                          border-radius:6px;
+                          cursor:pointer;">
+                      Remove
+                  </button>
+                </div>
+
             </div>
         `;
     });
 
-    box.innerHTML += `<hr><b>Total: ₹ ${total}</b>`;
+    box.innerHTML += `<hr><b>Total: ₹ ${total}</b>
+                      <div style="margin-top:8px;display:flex;gap:8px">
+                        <button class="btn" onclick="placeOrder()">Place Order</button>
+                        <button class="btn" style="background:#999" onclick="clearCart()">Clear Cart</button>
+                      </div>`;
 }
+
+function removeFromCart(index){
+    cart.splice(index, 1);
+    localStorage.setItem("consumer_cart", JSON.stringify(cart));
+    renderCart();
+    alert("Item removed from cart");
+}
+
+function clearCart(){
+    cart = [];
+    localStorage.setItem("consumer_cart", JSON.stringify(cart));
+    renderCart();
+}
+
+
+function clearCart(){
+    cart = [];
+    localStorage.setItem("consumer_cart", JSON.stringify(cart));
+    renderCart();
+}
+
 
 // ---------------- PLACE ORDER ----------------
 function placeOrder(){
