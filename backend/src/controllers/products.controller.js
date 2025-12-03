@@ -10,7 +10,7 @@ exports.createProduct = async (req, res, next) => {
     const schema = Joi.object({
       name: Joi.string().required(),
       qty: Joi.number().positive().required(),
-      price: Joi.number().positive().required(),
+      price: Joi.number().positive().required()
     });
 
     const { error, value } = schema.validate(req.body);
@@ -21,7 +21,7 @@ exports.createProduct = async (req, res, next) => {
       name: value.name,
       qty: value.qty,
       price: value.price,
-      image: req.file ? `/uploads/${req.file.filename}` : undefined,
+      image: req.file ? `/uploads/${req.file.filename}` : undefined
     });
 
     await product.save();
@@ -46,17 +46,17 @@ exports.listAll = async (req, res, next) => {
 /**
  * LIST PRODUCTS BY FARMER
  */
-exports.listByFarmer = async (req, res, next) => {
+exports.myProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
-    res.json(products);
+    const prods = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
+    res.json(prods);
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * UPDATE STOCK
+ * UPDATE STOCK (qty)
  */
 exports.updateStock = async (req, res, next) => {
   try {
@@ -83,10 +83,10 @@ exports.updateStock = async (req, res, next) => {
  */
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const productId = req.params.id;
+    const { id } = req.params;
     const userId = req.user.id;
 
-    const product = await Product.findById(productId);
+    const product = await Product.findById(id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
     if (product.farmer.toString() !== userId.toString()) {
@@ -95,18 +95,6 @@ exports.deleteProduct = async (req, res, next) => {
 
     await product.deleteOne();
     res.json({ success: true, message: "Product deleted" });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * GET MY PRODUCTS
- */
-exports.myProducts = async (req, res, next) => {
-  try {
-    const prods = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
-    res.json(prods);
   } catch (err) {
     next(err);
   }
