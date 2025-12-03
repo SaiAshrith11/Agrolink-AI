@@ -1,0 +1,243 @@
+/* ===========================
+   GLOBAL STYLES
+=========================== */
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #eef7ee;
+  color: #2b2b2b;
+}
+
+h1, h2 {
+  margin: 0 0 12px 0;
+  font-weight: 700;
+  color: #1b8a28;
+}
+
+h2 {
+  margin-top: 24px;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+header {
+  background: #1b8a28;
+  color: white;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 20px;
+  color: white;
+}
+
+.logout, .btn, button {
+  border: none;
+  cursor: pointer;
+}
+
+.logout {
+  background: #fff;
+  color: #1b8a28;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.lang {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #bfe6c5;
+  background: white;
+}
+
+.mic {
+  padding: 6px 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: transparent;
+  color: white;
+  font-size: 16px;
+}
+
+
+/* ===========================
+   CONTAINERS / CARDS
+=========================== */
+
+.wrap {
+  padding: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+.card {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  margin-bottom: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1b8a28;
+}
+
+.muted {
+  font-size: 14px;
+  color: #777;
+}
+
+.small {
+  font-size: 13px;
+}
+
+.btn {
+  background: #1b8a28;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* ===========================
+   PRODUCT LIST (Farmer)
+=========================== */
+
+.product-list .prod {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #f4fff4;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.danger {
+  background: #ff4d4f;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* ===========================
+   TABLES (Consumer & Farmer)
+=========================== */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.table th, 
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.table th {
+  background: #1b8a28;
+  color: white;
+  text-align: left;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ===========================
+   FORMS (login, register, sell)
+=========================== */
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 5px;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.container {
+  padding: 20px;
+  max-width: 550px;
+  margin: auto;
+}
+
+/* ===========================
+   BUTTON TYPES
+=========================== */
+
+.btn-small {
+  padding: 4px 8px;
+  background: #1b8a28;
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.backBtn {
+  background: white;
+  color: #1b8a28;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid #1b8a28;
+}
+
+/* ===========================
+   CENTERED LOGIN/REGISTER CARD
+=========================== */
+
+.auth-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  max-width: 420px;
+  margin: 80px auto;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.09);
+}
+
+.auth-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1b8a28;
+  font-size: 24px;
+}

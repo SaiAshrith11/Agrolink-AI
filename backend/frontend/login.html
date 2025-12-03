@@ -1,42 +1,53 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGROLINK-AI — Login</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Login — AGROLINK-AI</title>
 
-<style>
-    body { margin:0;background:#e1f4e3;font-family:Segoe UI, sans-serif;display:flex;justify-content:center;align-items:center;height:100vh; }
-    .container{background:white;width:350px;padding:25px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.15);text-align:center;}
-    .logo{font-size:40px;}
-    .title{font-size:25px;font-weight:700;color:#1b8a28;margin-bottom:10px;}
-    .input-box,.select-box{width:100%;padding:12px;margin-top:10px;border-radius:8px;border:1px solid #b7d8b9;font-size:15px;}
-    .btn{width:100%;padding:12px;margin-top:18px;background:#1b8a28;color:white;border:none;border-radius:8px;font-size:17px;cursor:pointer;}
-    .btn:hover{background:#166d20;}
-</style>
+<link rel="stylesheet" href="css/styles.css">
+
 </head>
-
 <body>
-<div class="container">
-    <div class="logo">🌾</div>
-    <div class="title">AGROLINK-AI</div>
 
-    <form id="loginForm">
-        <input id="username" class="input-box" placeholder="Username" required>
-        <input id="password" type="password" class="input-box" placeholder="Password" required>
+<div class="auth-card">
+  <h2 class="auth-title">Login</h2>
 
-        <select id="role" class="select-box">
-            <option value="farmer">👨‍🌾 Farmer</option>
-            <option value="consumer">🧑‍🤝‍🧑 Consumer</option>
-        </select>
+  <form id="loginForm">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter username">
+    </div>
 
-        <button class="btn" type="submit">Login</button>
-    </form>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter password">
+    </div>
+
+    <div class="form-group">
+      <label>Role</label>
+      <select id="role">
+        <option value="farmer">Farmer</option>
+        <option value="consumer">Consumer</option>
+      </select>
+    </div>
+
+    <button class="btn" type="submit">Login</button>
+  </form>
+
+  <!-- ⭐ ADD THIS SECTION ⭐ -->
+  <p style="text-align:center; margin-top:14px;">
+    Don't have an account?
+    <a href="register.html" style="color:#1b8a28; font-weight:600;">
+      Register here
+    </a>
+  </p>
+  <!-- END ADDED SECTION -->
+
 </div>
+
 <script src="js/api.js"></script>
 <script src="js/login.js"></script>
-
-
 
 </body>
 </html>
