@@ -1,57 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Consumer Dashboard — AGROLINK-AI</title>
 
-<style>
-  body{margin:0;background:#e8f7e8;font-family:Segoe UI,Arial,Helvetica,sans-serif}
-  header{background:#1b8a28;color:white;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
-  header h1{margin:0;font-size:20px}
-  .logout{background:white;color:#1b8a28;border:none;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
-  
-  .wrap{padding:18px;max-width:1200px;margin:auto}
-  h2{color:#1b8a28;margin-top:25px}
+<link rel="stylesheet" href="css/consumer_dashboard.css">
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:10px}
-  .card{background:white;padding:16px;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,0.08)}
-  .title{font-weight:700;font-size:17px;color:#1b8a28}
-  .muted{color:#527f52;font-size:14px;margin-bottom:8px}
-  
-  .btn{padding:8px 12px;border:none;border-radius:8px;background:#1b8a28;color:white;font-weight:700;cursor:pointer;width:100%}
-
-  table{width:100%;border-collapse:collapse;margin-top:10px;background:white;border-radius:10px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,0.08)}
-  th,td{padding:10px;text-align:left;border-bottom:1px solid #ddd}
-  th{background:#dfffe0}
-</style>
 </head>
-
 <body>
 
 <header>
-  <h1>🛒 Consumer Dashboard — AGROLINK-AI</h1>
-  <button class="logout" onclick="logout()">Logout</button>
+  <h1>🛒 Consumer Dashboard</h1>
+  <button class="logout" id="logoutBtn">Logout</button>
 </header>
 
 <div class="wrap">
 
   <!-- PRODUCT LIST -->
-  <h2>🛍 Available Products</h2>
+  <h2>Available Produce</h2>
   <div id="productGrid" class="grid"></div>
 
-  <!-- CART SECTION -->
-  <h2>🛒 Your Cart</h2>
-  <button class="btn" style="background:#b30000;margin-bottom:10px" onclick="clearCart()">Clear Cart</button>
+  <!-- CART -->
+  <h2>Your Cart</h2>
+  <div id="cartItems" class="card"></div>
 
-  <div class="card">
-    <div id="cartItems"></div>
-    <button class="btn" onclick="placeOrder()">Place Order</button>
-  </div>
-
-  <!-- PAST 5 ORDERS -->
-  <h2>📦 Your Recent Orders (Last 5)</h2>
-  <table>
+  <!-- PAST ORDERS -->
+  <h2>Past Orders</h2>
+  <table class="table">
     <thead>
       <tr><th>Product</th><th>Qty</th><th>Total</th><th>Date</th><th>Status</th></tr>
     </thead>
@@ -59,207 +35,9 @@
   </table>
 
 </div>
+<script src="js/api.js"></script>
 
-<script>
-// ---------------- LOGIN PROTECTION ----------------
-const user = JSON.parse(localStorage.getItem("agro_user"));
-if (!user || user.role !== "consumer") {
-    window.location.href = "login.html";
-}
-
-// ---------------- DATA LOAD ----------------
-let farmerProducts = JSON.parse(localStorage.getItem("farmer_products") || "[]");
-let cart = JSON.parse(localStorage.getItem("consumer_cart") || "[]");
-let orders = JSON.parse(localStorage.getItem("consumer_orders") || "[]");
-
-// ---------------- LOGOUT ----------------
-function logout(){
-    localStorage.removeItem("agro_user");
-    window.location.href = "login.html";
-}
-
-// ---------------- RENDER PRODUCTS ----------------
-function renderProducts(){
-    const grid = document.getElementById("productGrid");
-    grid.innerHTML = "";
-
-    if(farmerProducts.length === 0){
-        grid.innerHTML = "<p class='muted'>No products listed by farmers yet.</p>";
-        return;
-    }
-
-    farmerProducts.forEach((p, index)=>{
-        grid.innerHTML += `
-            <div class="card">
-                <div class="title">${p.name}</div>
-                <div class="muted">${p.qty} kg available</div>
-                <div><b>₹ ${p.price} /kg</b></div>
-                <button class="btn" onclick="addToCart(${index})">Add to Cart</button>
-            </div>
-        `;
-    });
-}
-
-// ---------------- ADD TO CART ----------------
-function addToCart(i){
-    const p = farmerProducts[i];
-    const exists = cart.find(c => c.name.toLowerCase() === p.name.toLowerCase());
-
-    if(exists){
-        exists.qty += 1;
-    } else {
-        cart.push({ name:p.name, qty:1, price:p.price });
-    }
-
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-    function removeFromCart(index){
-    cart.splice(index, 1);   // delete item by index
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-    alert("Item removed from cart");
-}
-// ---------------- REMOVE FROM CART ----------------
-function removeFromCart(index){
-    cart.splice(index, 1);
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-    alert("Item removed from cart");
-}
-
-}
-
-// ---------------- RENDER CART ----------------
-function renderCart(){
-    const box = document.getElementById("cartItems");
-    box.innerHTML = "";
-
-    let total = 0;
-
-    if (cart.length === 0) {
-        box.innerHTML = "<div class='muted'>Cart empty</div>";
-        return;
-    }
-
-    cart.forEach((c,i)=>{
-        const itemTotal = c.qty * c.price;
-        total += itemTotal;
-
-        box.innerHTML += `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                
-                <div>
-                    ${c.name} x ${c.qty}
-                    <br><span style="color:#527f52;font-size:13px;">₹ ${itemTotal}</span>
-                </div>
-
-                <div style="display:flex;gap:8px">
-                  <button 
-                      onclick="removeFromCart(${i})"
-                      style="
-                          background:#ff4d4f;
-                          color:white;
-                          border:none;
-                          padding:6px 10px;
-                          border-radius:6px;
-                          cursor:pointer;">
-                      Remove
-                  </button>
-                </div>
-
-            </div>
-        `;
-    });
-
-    box.innerHTML += `<hr><b>Total: ₹ ${total}</b>
-                      <div style="margin-top:8px;display:flex;gap:8px">
-                        <button class="btn" onclick="placeOrder()">Place Order</button>
-                        <button class="btn" style="background:#999" onclick="clearCart()">Clear Cart</button>
-                      </div>`;
-}
-
-function removeFromCart(index){
-    cart.splice(index, 1);
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-    alert("Item removed from cart");
-}
-
-function clearCart(){
-    cart = [];
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-}
-
-
-function clearCart(){
-    cart = [];
-    localStorage.setItem("consumer_cart", JSON.stringify(cart));
-    renderCart();
-}
-
-
-// ---------------- PLACE ORDER ----------------
-function placeOrder(){
-    if(cart.length === 0){
-        alert("Cart is empty");
-        return;
-    }
-
-    const now = new Date().toLocaleString();
-
-    cart.forEach(c=>{
-        orders.push({
-            product: c.name,
-            qty: c.qty,
-            total: c.qty * c.price,
-            date: now,
-            status: "PENDING"
-        });
-    });
-
-    // Save orders
-    localStorage.setItem("consumer_orders", JSON.stringify(orders));
-
-    // Clear cart
-    cart = [];
-    localStorage.setItem("consumer_cart", JSON.stringify([]));
-
-    renderCart();
-    renderPastOrders();
-
-    alert("Order placed! The farmer will review it.");
-
-    // Farmer receives same orders in sell_produce.html automatically
-}
-
-// ---------------- RENDER LAST 5 ORDERS ----------------
-function renderPastOrders(){
-    const tbody = document.getElementById("pastOrders");
-    tbody.innerHTML = "";
-
-    let last5 = orders.slice(-5).reverse();
-
-    last5.forEach(o=>{
-        tbody.innerHTML += `
-            <tr>
-                <td>${o.product}</td>
-                <td>${o.qty}</td>
-                <td>₹ ${o.total}</td>
-                <td>${o.date}</td>
-                <td style="font-weight:700; color:${o.status === 'ACCEPTED' ? 'green' : 'orange'}">
-                    ${o.status}
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// ---------------- INITIAL LOAD ----------------
-renderProducts();
-renderCart();
-renderPastOrders();
-</script>
+<script src="js/consumer.js"></script>
 
 </body>
 </html>

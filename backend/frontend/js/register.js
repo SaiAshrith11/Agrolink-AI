@@ -1,50 +1,36 @@
 // backend/frontend/js/register.js
-const API = "https://agrolink-ai-1.onrender.com/api/auth";
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("registerForm");
+(() => {
+  console.log('register.js loaded');
+  const form = document.getElementById('registerForm');
   if (!form) return;
-
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+    if (!username || !password) { alert('Please fill fields'); return; }
 
-    const username = (document.getElementById("username") || {}).value?.trim();
-    const password = (document.getElementById("password") || {}).value?.trim();
-    const role = (document.getElementById("role") || {}).value || "farmer";
-
-    if (!username || !password) {
-      alert("Please enter username and password.");
-      return;
-    }
-
+    // Try backend registration if exists
     try {
-      const res = await fetch(`${API}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('https://agrolink-ai-1.onrender.com/api/auth/register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ username, password, role })
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error || "Registration failed");
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem('agro_user', JSON.stringify(data));
+        alert('Registered successfully');
+        if (data.role === 'farmer') window.location.href = 'farmer_dashboard.html'; else window.location.href = 'consumer_dashboard.html';
         return;
       }
+    } catch (e) { /* ignore -> fallback */ }
 
-      // Save token + user and redirect to appropriate dashboard
-      localStorage.setItem("agro_user", JSON.stringify({
-        token: data.token,
-        username: data.user.username,
-        role: data.user.role
-      }));
-
-      if (data.user.role === "farmer") window.location.href = "farmer_dashboard.html";
-      else window.location.href = "consumer_dashboard.html";
-
-    } catch (err) {
-      console.error("Register error", err);
-      alert("Network error. Try again.");
-    }
+    // Fallback: local storage registration
+    const token = 'local-' + Date.now();
+    const user = { username, role, token };
+    localStorage.setItem('agro_user', JSON.stringify(user));
+    alert('Registered (local). Redirecting to dashboard.');
+    if (role === 'farmer') window.location.href = 'farmer_dashboard.html'; else window.location.href = 'consumer_dashboard.html';
   });
-});
+})();
