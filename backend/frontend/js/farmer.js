@@ -1,5 +1,5 @@
 // backend/frontend/js/farmer.js
-// Handles farmer dashboard UI, sensors simulation, voice commands, and produce loading
+// Handles farmer dashboard UI, sensors simulation, full voice commands, and produce loading
 
 (async () => {
 
@@ -88,7 +88,6 @@
       recognition.onresult = (ev) => {
         const text = ev.results[0][0].transcript.trim().toLowerCase();
         console.log("VOICE TEXT:", text, "confidence:", ev.results[0][0].confidence);
-
         handleVoiceCommand(text);
       };
 
@@ -98,13 +97,8 @@
         console.log("voice: ended listening");
       };
 
-      recognition.onerror = (e) => {
-        console.error("voice error:", e);
-      };
-
-      recognition.onnomatch = () => {
-        console.log("voice: no match");
-      };
+      recognition.onerror = (e) => console.error("voice error:", e);
+      recognition.onnomatch = () => console.log("voice: no match");
 
     } else {
       micBtn.style.display = "none";
@@ -132,36 +126,54 @@
     } catch {}
   }
 
-  // === FIXED: EXPANDED VOICE COMMANDS + SMART MATCHING ===
+  // ========================================
+  // 🔥 FULL VOICE COMMAND SUPPORT
+  // ========================================
   const COMMANDS = {
     "en-IN": {
       openSell: [
-        "open sell produce",
-        "open sale produce",
-        "open cell produce",
-        "open self produce",
-        "sell produce",
-        "open sell",
-        "go to sell",
-        "go to sell produce",
-        "go to sale produce",
-        "open the sell produce",
-        "open sell produce page"
+        "open sell produce","open sale produce","open cell produce",
+        "open self produce","sell produce","open sell","go to sell",
+        "go to sell produce","open the sell produce","open sell produce page"
       ],
-      predictPrice: ["predict price", "price prediction", "predict the price"],
-      checkQuality: ["check quality", "produce quality", "quality check"],
-      logout: ["logout", "log out", "sign out"]
+
+      predictPrice: ["predict price","price prediction","predict the price"],
+      predictYield: ["predict yield","yield prediction","calculate yield"],
+      predictFertilizer: ["predict fertilizer","fertilizer suggestion","fertilizer"],
+      checkQuality: ["check quality","produce quality","quality check"],
+
+      showMoisture: ["show moisture","moisture level","moisture"],
+      showTemperature: ["show temperature","temperature","temperature level"],
+      showHumidity: ["show humidity","humidity"],
+      showPH: ["show ph","ph level"],
+      showNPK: ["show npk","npk level","npk"],
+
+      scrollDown: ["scroll down","go down"],
+      scrollUp: ["scroll up","go up","move up"],
+
+      logout: ["logout","log out","sign out"]
     },
 
     "hi-IN": {
-      openSell: ["बेचने", "बेचो", "सेल पेज", "सेल खोलो"],
-      predictPrice: ["कीमत", "कीमत बताओ"],
-      checkQuality: ["गुणवत्ता", "गुणवत्ता जाँच"],
-      logout: ["लॉग आउट", "बाहर निकलो"]
+      openSell: ["बेचो","बेचने","सेल पेज","सेल खोलो"],
+      predictPrice: ["कीमत","कीमत बताओ"],
+      predictYield: ["उपज","उपज बताओ"],
+      predictFertilizer: ["उर्वरक","उर्वरक सुझाव"],
+      checkQuality: ["गुणवत्ता","गुणवत्ता जाँच"],
+
+      showMoisture: ["नमी","moisture"],
+      showTemperature: ["तापमान"],
+      showHumidity: ["ह्यूमिडिटी", "नमी का स्तर"],
+      showPH: ["पीएच"],
+      showNPK: ["एनपीके"],
+
+      scrollDown: ["नीचे जाओ"],
+      scrollUp: ["ऊपर जाओ"],
+
+      logout: ["लॉग आउट","बाहर निकलो"]
     }
   };
 
-  // smart matching
   function normalize(s) {
     return s.replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
   }
@@ -169,48 +181,42 @@
   function matchesAny(text, arr) {
     text = normalize(text);
     const tokens = text.split(" ");
-
     return arr.some(cmd => {
       const c = normalize(cmd);
-      const ctokens = c.split(" ");
-
-      // match ANY token
-      if (ctokens.some(t => tokens.includes(t))) return true;
-
-      // match full phrase
+      const words = c.split(" ");
+      if (words.some(w => tokens.includes(w))) return true;
       if (text.includes(c)) return true;
-
       return false;
     });
   }
 
+  // === MAIN HANDLER (ALL FEATURES) ===
   function handleVoiceCommand(text) {
     const lang = langSelect.value;
     const cmds = COMMANDS[lang] || COMMANDS["en-IN"];
 
-    if (matchesAny(text, cmds.openSell)) {
-      speak("Opening sell produce page");
-      openSellPage();
-      return;
-    }
+    // navigation
+    if (matchesAny(text, cmds.openSell)) { speak("Opening sell produce page"); openSellPage(); return; }
 
-    if (matchesAny(text, cmds.predictPrice)) {
-      speak("Predicting price");
-      predictPrice();
-      return;
-    }
+    // AI features
+    if (matchesAny(text, cmds.predictPrice)) { speak("Predicting price"); predictPrice(); return; }
+    if (matchesAny(text, cmds.predictYield)) { speak("Predicting yield"); predictYield(); return; }
+    if (matchesAny(text, cmds.predictFertilizer)) { speak("Getting fertilizer suggestion"); predictFertilizer(); return; }
+    if (matchesAny(text, cmds.checkQuality)) { speak("Checking produce quality"); checkQuality(); return; }
 
-    if (matchesAny(text, cmds.checkQuality)) {
-      speak("Checking quality");
-      checkQuality();
-      return;
-    }
+    // sensor display
+    if (matchesAny(text, cmds.showMoisture)) { speak("Moisture is " + sensors.moisture); return; }
+    if (matchesAny(text, cmds.showTemperature)) { speak("Temperature is " + sensors.temp + " degree"); return; }
+    if (matchesAny(text, cmds.showHumidity)) { speak("Humidity is " + (sensors.humidity || 45)); return; }
+    if (matchesAny(text, cmds.showPH)) { speak("Soil pH is " + sensors.ph); return; }
+    if (matchesAny(text, cmds.showNPK)) { speak("NPK value is " + sensors.npk); return; }
 
-    if (matchesAny(text, cmds.logout)) {
-      speak("Logging out");
-      logout();
-      return;
-    }
+    // scrolling
+    if (matchesAny(text, cmds.scrollDown)) { window.scrollBy({ top: 400, behavior: "smooth" }); return; }
+    if (matchesAny(text, cmds.scrollUp)) { window.scrollBy({ top: -400, behavior: "smooth" }); return; }
+
+    // logout
+    if (matchesAny(text, cmds.logout)) { speak("Logging out"); logout(); return; }
 
     speak(DICT[lang].commandNotFound);
   }
@@ -231,7 +237,7 @@
   // ========================
   // SENSOR SIMULATION + UI
   // ========================
-  let sensors = { temp: 28, moisture: 45, npk: 380, ph: 6.7 };
+  let sensors = { temp: 28, moisture: 45, npk: 380, ph: 6.7, humidity: 50 };
 
   function updateSensorUI() {
     document.getElementById("temp").innerText = sensors.temp + "°C";
@@ -245,9 +251,10 @@
     if (sensors.ph >= 6 && sensors.ph <= 7.5) score++;
     if (sensors.npk >= 300 && sensors.npk <= 600) score++;
 
-    const status = score >= 3 ? "🟢 GOOD" :
-                   score === 2 ? "🟡 MODERATE" :
-                                  "🔴 POOR";
+    const status =
+      score >= 3 ? "🟢 GOOD" :
+      score === 2 ? "🟡 MODERATE" :
+                    "🔴 POOR";
 
     document.getElementById("farmCondition").innerText = status;
     document.getElementById("yieldValue").innerText =
@@ -266,13 +273,13 @@
     sensors.moisture = 30 + Math.round(Math.random() * 40);
     sensors.npk = 250 + Math.round(Math.random() * 400);
     sensors.ph = (5.5 + Math.random() * 2).toFixed(1);
+    sensors.humidity = 40 + Math.round(Math.random() * 40);
     updateSensorUI();
   }, 6000);
 
   // ========================
   // LOAD PRODUCTS
   // ========================
-
   async function fetchMyProducts() {
     const urls = [
       API + "/products/my-products",
@@ -332,12 +339,15 @@
       const edit = document.createElement("button");
       edit.className = "btn small";
       edit.textContent = "Edit";
-      edit.addEventListener("click", () => alert("Edit from Sell Produce page"));
+      edit.addEventListener("click", () =>
+        alert("Edit from Sell Produce page"));
 
       const del = document.createElement("button");
       del.className = "danger small";
       del.textContent = "Delete";
-      del.addEventListener("click", () => deleteProduct(p._id || p.id || ""));
+      del.addEventListener("click", () =>
+        deleteProduct(p._id || p.id || "")
+      );
 
       actions.appendChild(edit);
       actions.appendChild(del);
@@ -414,3 +424,4 @@
   loadProducts();
 
 })();
+
