@@ -1,6 +1,6 @@
-// src/controllers/products.controller.js
-const Product = require("../models/Product");
-const Joi = require("joi");
+// backend/src/controllers/productCtrl.js
+const Product = require('../models/Product');
+const Joi = require('joi');
 
 /**
  * CREATE PRODUCT
@@ -10,7 +10,7 @@ exports.createProduct = async (req, res, next) => {
     const schema = Joi.object({
       name: Joi.string().required(),
       qty: Joi.number().positive().required(),
-      price: Joi.number().positive().required(),
+      price: Joi.number().positive().required()
     });
 
     const { error, value } = schema.validate(req.body);
@@ -21,7 +21,7 @@ exports.createProduct = async (req, res, next) => {
       name: value.name,
       qty: value.qty,
       price: value.price,
-      image: req.file ? `/uploads/${req.file.filename}` : undefined,
+      image: req.file ? `/uploads/${req.file.filename}` : null
     });
 
     await product.save();
@@ -44,14 +44,12 @@ exports.listAll = async (req, res, next) => {
 };
 
 /**
- * LIST PRODUCTS BY FARMER
+ * GET MY PRODUCTS
  */
 exports.myProducts = async (req, res, next) => {
   try {
-    const products = await Product.find({ farmer: req.user.id }).sort({
-      createdAt: -1,
-    });
-    res.json(products);
+    const list = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
+    res.json(list);
   } catch (err) {
     next(err);
   }
@@ -64,9 +62,6 @@ exports.updateStock = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { qty } = req.body;
-
-    if (typeof qty !== "number")
-      return res.status(400).json({ error: "qty must be number" });
 
     const product = await Product.findOne({ _id: id, farmer: req.user.id });
     if (!product) return res.status(404).json({ error: "Product not found" });
@@ -85,21 +80,16 @@ exports.updateStock = async (req, res, next) => {
  */
 exports.deleteProduct = async (req, res, next) => {
   try {
-    const productId = req.params.id;
-    const userId = req.user.id;
+    const product = await Product.findOne({
+      _id: req.params.id,
+      farmer: req.user.id
+    });
 
-    const product = await Product.findById(productId);
-    if (!product)
-      return res.status(404).json({ error: "Product not found" });
-
-    if (product.farmer.toString() !== userId.toString()) {
-      return res
-        .status(403)
-        .json({ error: "Forbidden — not your product" });
-    }
+    if (!product) return res.status(404).json({ error: "Product not found" });
 
     await product.deleteOne();
-    res.json({ success: true, message: "Product deleted" });
+
+    res.json({ message: "Product deleted" });
   } catch (err) {
     next(err);
   }
