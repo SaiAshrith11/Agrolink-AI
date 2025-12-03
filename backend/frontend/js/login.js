@@ -21,10 +21,21 @@
       });
       if (res.ok) {
         const data = await res.json();
-        localStorage.setItem('agro_user', JSON.stringify(data));
-        if (data.role === 'farmer') window.location.href = 'farmer_dashboard.html'; else window.location.href = 'consumer_dashboard.html';
-        return;
-      }
+        const userData = {
+    token: data.token,
+    username: data.user.username,
+    role: data.user.role
+  };
+
+  localStorage.setItem("agro_user", JSON.stringify(userData));
+
+  if (userData.role === "farmer") {
+    window.location.href = "farmer_dashboard.html";
+  } else {
+    window.location.href = "consumer_dashboard.html";
+  }
+  return;
+}
     } catch (e) {
       // ignore -> fallback to local
     }
