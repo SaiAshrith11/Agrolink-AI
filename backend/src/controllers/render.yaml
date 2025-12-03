@@ -1,0 +1,10 @@
+services:
+  - name: agrolink-backend
+    type: web
+    env: node
+    buildCommand: npm install
+    startCommand: node src/app.js
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - backend/**

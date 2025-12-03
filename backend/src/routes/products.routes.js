@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-
 const productCtrl = require("../controllers/product.controller");
-const auth = require("../middleware/auth");
+
+const { auth } = require("../middleware/auth");
 
 // FARMER
 router.post("/add", auth, productCtrl.createProduct);

@@ -1,0 +1,8 @@
+{
+  "name": "agrolink-ai-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix backend"
+  }
+}
+

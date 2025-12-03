@@ -1,10 +1,7 @@
-// backend/src/controllers/productCtrl.js
 const Product = require('../models/Product');
 const Joi = require('joi');
 
-/**
- * CREATE PRODUCT
- */
+// CREATE PRODUCT
 exports.createProduct = async (req, res, next) => {
   try {
     const schema = Joi.object({
@@ -31,9 +28,7 @@ exports.createProduct = async (req, res, next) => {
   }
 };
 
-/**
- * LIST ALL PRODUCTS
- */
+// LIST ALL PRODUCTS
 exports.listAll = async (req, res, next) => {
   try {
     const products = await Product.find().sort({ createdAt: -1 });
@@ -43,9 +38,7 @@ exports.listAll = async (req, res, next) => {
   }
 };
 
-/**
- * GET MY PRODUCTS
- */
+// GET MY PRODUCTS
 exports.myProducts = async (req, res, next) => {
   try {
     const list = await Product.find({ farmer: req.user.id }).sort({ createdAt: -1 });
@@ -55,9 +48,7 @@ exports.myProducts = async (req, res, next) => {
   }
 };
 
-/**
- * UPDATE STOCK
- */
+// UPDATE STOCK
 exports.updateStock = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -75,9 +66,7 @@ exports.updateStock = async (req, res, next) => {
   }
 };
 
-/**
- * DELETE PRODUCT
- */
+// DELETE PRODUCT
 exports.deleteProduct = async (req, res, next) => {
   try {
     const product = await Product.findOne({
