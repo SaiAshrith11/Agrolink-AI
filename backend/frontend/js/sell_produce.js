@@ -68,28 +68,115 @@
   addBtn.addEventListener("click", addProduce);
 
 
-  // ------------------------------
-  // PRODUCE LIST
-  // ------------------------------
+  // ===============================
+// PRODUCE LIST (EDIT + DELETE)
+// ===============================
 
-  function renderProduce() {
-    produceList.innerHTML = "";
+function renderProduce() {
+  produceList.innerHTML = "";
 
-    if (farmerProducts.length === 0) {
-      produceList.innerHTML = `<tr><td colspan="3" class="muted">No produce added yet.</td></tr>`;
-      return;
-    }
-
-    farmerProducts.forEach(p => {
-      produceList.innerHTML += `
-        <tr>
-          <td>${p.name}</td>
-          <td>${p.qty} kg</td>
-          <td>₹ ${p.price}</td>
-        </tr>
-      `;
-    });
+  if (farmerProducts.length === 0) {
+    produceList.innerHTML = `
+      <tr>
+        <td colspan="4" class="muted">No produce added yet.</td>
+      </tr>`;
+    return;
   }
+
+  farmerProducts.forEach((p) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${p.name}</td>
+      <td>${p.qty} kg</td>
+      <td>₹ ${p.price}</td>
+      <td></td>
+    `;
+
+    const actionCell = row.querySelector("td:last-child");
+
+    // ----- EDIT BUTTON -----
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn-small";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => editProduce(p.id));
+
+    // ----- DELETE BUTTON -----
+    const delBtn = document.createElement("button");
+    delBtn.className = "danger btn-small";
+    delBtn.style.marginLeft = "6px";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", () => deleteProduce(p.id));
+
+    actionCell.appendChild(editBtn);
+    actionCell.appendChild(delBtn);
+
+    produceList.appendChild(row);
+  });
+}
+
+// ===============================
+// DELETE PRODUCE
+// ===============================
+function deleteProduce(id) {
+  if (!confirm("Delete this produce item?")) return;
+
+  farmerProducts = farmerProducts.filter((p) => p.id !== id);
+
+  saveLocal();
+  renderProduce();
+  alert("Produce deleted.");
+}
+
+// ===============================
+// EDIT PRODUCE
+// ===============================
+function editProduce(id) {
+  const item = farmerProducts.find((p) => p.id === id);
+  if (!item) return;
+
+  // prefill form fields
+  pname.value = item.name;
+  pqty.value = item.qty;
+  pprice.value = item.price;
+
+  // change add button to save button
+  addBtn.textContent = "Save Changes";
+  addBtn.onclick = () => saveProduceEdits(id);
+}
+
+// ===============================
+// SAVE PRODUCE EDITS
+// ===============================
+function saveProduceEdits(id) {
+  const name = pname.value.trim();
+  const qty = Number(pqty.value);
+  const price = Number(pprice.value);
+
+  if (!name || !qty || !price) {
+    alert("Fill all fields.");
+    return;
+  }
+
+  const item = farmerProducts.find((p) => p.id === id);
+  if (!item) return;
+
+  item.name = name;
+  item.qty = qty;
+  item.price = price;
+
+  saveLocal();
+  renderProduce();
+
+  // reset form
+  addBtn.textContent = "Add Produce";
+  addBtn.onclick = addProduce;
+  pname.value = "";
+  pqty.value = "";
+  pprice.value = "";
+
+  alert("Produce updated successfully!");
+}
 
 
   // ------------------------------
