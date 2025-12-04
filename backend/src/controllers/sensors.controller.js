@@ -1,30 +1,27 @@
-// src/controllers/sensor.controller.js
-const Sensor = require('../models/Sensor');
-const Joi = require('joi');
+const Sensor = require("../models/Sensor");
 
-exports.ingest = async (req, res, next) => {
+exports.logSensorData = async (req, res) => {
   try {
-    const schema = Joi.object({
-      moisture: Joi.number().required(),
-      temperature: Joi.number().required(),
-      humidity: Joi.number().optional(),
-      ph: Joi.number().required(),
-      npk: Joi.number().required()
-    });
-    const { error, value } = schema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.message });
+    const { temperature, moisture, npk } = req.body;
 
-    const record = await Sensor.create({
+    if (temperature == null || moisture == null || npk == null) {
+      return res.status(400).json({ error: "Missing sensor fields" });
+    }
+
+    const sensor = new Sensor({
       farmer: req.user.id,
-      values: value
+      temperature,
+      moisture,
+      npk,
+      ph: (6 + Math.random() * 1.5).toFixed(1), // auto pH when no sensor
+      createdAt: new Date(),
     });
-    res.status(201).json(record);
-  } catch (err) { next(err); }
-};
 
-exports.latest = async (req, res, next) => {
-  try {
-    const latest = await Sensor.findOne({ farmer: req.user.id }).sort({ recordedAt: -1 }).limit(1);
-    res.json(latest);
-  } catch (err) { next(err); }
+    await sensor.save();
+    res.status(201).json({ success: true, sensor });
+
+  } catch (err) {
+    console.error("Sensor Logging Error:", err);
+    res.status(500).json({ error: err.message });
+  }
 };

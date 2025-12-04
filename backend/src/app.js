@@ -12,8 +12,8 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth.routes');
 const productRoutes = require('./routes/products.routes');
 const orderRoutes = require('./routes/orders.routes');
-const sensorRoutes = require('./routes/sensors.routes');
 const salesRoutes = require('./routes/sales.routes');
+const sensorRoutes = require('./routes/sensor.routes'); // ✅ Correct Sensor Route Name
 const mlRoutes = require('./routes/ml.routes');
 
 const PORT = process.env.PORT || 4000;
@@ -23,36 +23,41 @@ const PORT = process.env.PORT || 4000;
 
   const app = express();
 
-  // Security
+  // ================================
+  // SECURITY MIDDLEWARE
+  // ================================
   app.use(helmet());
   app.use(cors({ origin: true, credentials: true }));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('tiny'));
-  app.use(createRateLimiter(15, 200));
+  app.use(createRateLimiter(15, 200)); // Protect API
 
-  // ---------------------------
-  // ✅ API ROUTES (must be BEFORE static)
-  // ---------------------------
+  // ================================
+  // API ROUTES
+  // ================================
   app.use('/api/auth', authRoutes);
   app.use('/api/products', productRoutes);
   app.use('/api/orders', orderRoutes);
-  app.use('/api/sensors', sensorRoutes);
   app.use('/api/sales', salesRoutes);
+  app.use('/api/sensors', sensorRoutes);  // ✅ NEW Route Mounted
   app.use('/api/ml', mlRoutes);
 
-  // ---------------------------
+  // ================================
   // STATIC FRONTEND
-  // ---------------------------
+  // ================================
   const FRONTEND_DIR = path.join(__dirname, "../frontend");
   app.use(express.static(FRONTEND_DIR));
 
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "login.html"));
-  });
+  app.get("/", (req, res) =>
+    res.sendFile(path.join(FRONTEND_DIR, "login.html"))
+  );
 
-  // ERROR HANDLER
+  // GLOBAL ERROR HANDLER
   app.use(errorHandler);
 
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  app.listen(PORT, () =>
+    console.log(`🚀 Server running at: http://localhost:${PORT}`)
+  );
+
 })();

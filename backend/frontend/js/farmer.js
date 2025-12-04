@@ -275,6 +275,24 @@
     sensors.ph = (5.5 + Math.random() * 2).toFixed(1);
     sensors.humidity = 40 + Math.round(Math.random() * 40);
     updateSensorUI();
+    logSensorData();
+async function logSensorData() {
+  if (!token) return;
+
+  await fetch(API + "/sensors/log", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({
+      temperature: sensors.temp,
+      moisture: sensors.moisture,
+      npk: sensors.npk
+    })
+  });
+}
+
   }, 6000);
 
   // ========================
@@ -419,6 +437,32 @@
   predictYieldBtn.addEventListener("click", predictYield);
   predictFertBtn.addEventListener("click", predictFertilizer);
   checkQualityBtn.addEventListener("click", checkQuality);
+// ========================
+// ADD PRODUCT TO DB
+// ========================
+async function addProduct(name, qty, price) {
+  if (!token) {
+    alert("Not logged in!");
+    return;
+  }
+
+  const res = await fetch(API + "/products/add", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ name, qty, price })
+  });
+
+  if (!res.ok) {
+    alert("Failed to add product");
+    return;
+  }
+
+  alert("Product added!");
+  await loadProducts();
+}
 
   // load initial products
   loadProducts();
