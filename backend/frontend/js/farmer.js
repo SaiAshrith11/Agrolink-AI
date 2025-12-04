@@ -6,6 +6,7 @@
   console.log("farmer.js loaded");
 
   const BACKEND = "https://agrolink-ai-1.onrender.com";
+
   const API = BACKEND + "/api";
 
   const user = JSON.parse(localStorage.getItem("agro_user") || "{}");
@@ -268,15 +269,7 @@
 
   updateSensorUI();
 
-  setInterval(() => {
-    sensors.temp = 20 + Math.round(Math.random() * 12);
-    sensors.moisture = 30 + Math.round(Math.random() * 40);
-    sensors.npk = 250 + Math.round(Math.random() * 400);
-    sensors.ph = (5.5 + Math.random() * 2).toFixed(1);
-    sensors.humidity = 40 + Math.round(Math.random() * 40);
-    updateSensorUI();
-    logSensorData();
-async function logSensorData() {
+ async function logSensorData() {
   if (!token) return;
 
   await fetch(API + "/sensors/log", {
@@ -288,12 +281,24 @@ async function logSensorData() {
     body: JSON.stringify({
       temperature: sensors.temp,
       moisture: sensors.moisture,
-      npk: sensors.npk
+      npk: sensors.npk,
+      ph: sensors.ph,
+      humidity: sensors.humidity
     })
   });
 }
 
-  }, 6000);
+setInterval(() => {
+  sensors.temp = 20 + Math.round(Math.random() * 12);
+  sensors.moisture = 30 + Math.round(Math.random() * 40);
+  sensors.npk = 250 + Math.round(Math.random() * 400);
+  sensors.ph = (5.5 + Math.random() * 2).toFixed(1);
+  sensors.humidity = 40 + Math.round(Math.random() * 40);
+
+  updateSensorUI();
+  logSensorData();
+}, 6000);
+
 
   // ========================
   // LOAD PRODUCTS
