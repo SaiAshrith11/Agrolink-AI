@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix backend"
+  },
+  "dependencies": {
+    "multer": "^2.0.2"
   }
 }
-

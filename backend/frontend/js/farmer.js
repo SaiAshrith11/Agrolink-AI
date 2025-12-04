@@ -405,38 +405,104 @@ async function logSensorData() {
     await loadProducts();
   }
 
-  // calculate predictions
-  function predictPrice() {
-    const p =
-      Math.round(
-        (sensors.temp * 2 +
-          sensors.moisture +
-          sensors.npk / 20 +
-          parseFloat(sensors.ph) * 5) *
-          1.1
-      );
+   // ============================
+  // ML API CALL (one endpoint)
+  // ============================
+  let lastMlResult = null;
+
+  async function callML() {
+    try {
+      const imgInput = document.getElementById("cropImage");
+      const form = new FormData();
+
+      form.append("moisture", sensors.moisture);
+      form.append("temperature", sensors.temp);
+      form.append("npk", sensors.npk);
+      form.append("ph", sensors.ph);
+      form.append("humidity", sensors.humidity || 50);
+      form.append("cropType", "generic"); // later: wheat, rice, etc.
+
+      if (imgInput && imgInput.files && imgInput.files[0]) {
+        form.append("image", imgInput.files[0]);
+      }
+
+      const res = await fetch(API + "/ml/analyze", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + (token || ""),
+          // DO NOT set Content-Type for FormData; browser sets boundary.
+        },
+        body: form
+      });
+
+      if (!res.ok) {
+        throw new Error("ML API failed: " + res.status);
+      }
+
+      const data = await res.json();
+      lastMlResult = data;
+      console.log("ML result:", data);
+      return data;
+
+    } catch (err) {
+      console.error(err);
+      alert("Prediction failed. Please try again.");
+      return null;
+    }
+  }
+
+  // ============================
+  // UI helper to ensure result
+  // ============================
+  async function ensureMlResult() {
+    if (lastMlResult) return lastMlResult;
+    return await callML();
+  }
+
+  // ============================
+  // BUTTON HANDLERS
+  // ============================
+  async function predictPrice() {
+    const data = await ensureMlResult();
+    if (!data) return;
+    const p = data.price;
     document.getElementById("priceValue").innerText = "₹ " + p;
     speak("Predicted price " + p);
   }
 
-  function predictYield() {
-    speak("Predicting yield (simulated)");
+  async function predictYield() {
+    const data = await ensureMlResult();
+    if (!data) return;
+    const y = data.yieldPercent;
+    document.getElementById("yieldValue").innerText = y + "%";
+    speak("Predicted yield " + y + " percent");
   }
 
-  function predictFertilizer() {
-    speak("Getting suggestion (simulated)");
+  async function predictFertilizer() {
+    const data = await ensureMlResult();
+    if (!data) return;
+    const msg = data.fertilizerSuggestion;
+    document.getElementById("fertValue").innerText = msg;
+    speak(msg);
   }
 
-  function checkQuality() {
-    speak("Quality check (simulated)");
-    document.getElementById("qualityResult").innerText =
-      "Quality: HIGH (simulated)";
+  async function checkQuality() {
+    // For quality we force a fresh call so that new image is considered
+    lastMlResult = null;
+    const data = await callML();
+    if (!data) return;
+
+    const q = data.quality || "UNKNOWN";
+    const text = "Quality: " + q;
+    document.getElementById("qualityResult").innerText = text;
+    speak(text);
   }
 
   predictPriceBtn.addEventListener("click", predictPrice);
   predictYieldBtn.addEventListener("click", predictYield);
   predictFertBtn.addEventListener("click", predictFertilizer);
   checkQualityBtn.addEventListener("click", checkQuality);
+
 // ========================
 // ADD PRODUCT TO DB
 // ========================
