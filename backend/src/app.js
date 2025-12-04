@@ -1,3 +1,6 @@
+import mlRoutes from "./routes/ml.routes.js";
+app.use("/api/ml", mlRoutes);
+
 require('dotenv').config();
 const express = require('express');
 const path = require("path");

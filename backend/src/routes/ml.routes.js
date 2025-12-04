@@ -1,35 +1,35 @@
-// src/routes/ml.routes.js
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const path = require("path");
-const { auth } = require("../middleware/auth");
-const mlCtrl = require("../controllers/ml.controller");
+import express from "express";
+import fetch from "node-fetch";
+import { auth } from "../middleware/auth.js"; // if auth needed
 
-// === Multer setup for image upload ===
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "../../uploads"));
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    const name = Date.now() + "-" + Math.round(Math.random() * 1e9) + ext;
-    cb(null, name);
+const router = express.Router();
+
+const ML_URL = "https://agrolink-ai-2.onrender.com/analyze"; // FastAPI service
+
+router.post("/analyze", auth, async (req, res) => {
+  try {
+    const formData = new FormData();
+
+    for (const key in req.body) {
+      formData.append(key, req.body[key]);
+    }
+
+    if (req.files?.image) {
+      formData.append("image", req.files.image.data, req.files.image.name);
+    }
+
+    const response = await fetch(ML_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+    return res.json(data);
+
+  } catch (err) {
+    console.error("ML request failed", err);
+    return res.status(500).json({ error: "ML Server not reachable" });
   }
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-});
-
-// POST /api/ml/analyze
-// Body: form-data with fields: moisture, temperature, npk, ph, humidity, cropType, and file 'image'
-router.post(
-  "/analyze",
-  auth,
-  upload.single("image"),   // image is optional but supported
-  mlCtrl.analyzeCrop
-);
-
-module.exports = router;
+export default router;

@@ -411,50 +411,91 @@ setInterval(() => {
   }
 
    // ============================
-  // ML API CALL (one endpoint)
-  // ============================
-  let lastMlResult = null;
+// ML API CALL (updated)
+// ============================
+let lastMlResult = null;
 
-  async function callML() {
-    try {
-      const imgInput = document.getElementById("cropImage");
-      const form = new FormData();
+async function callML(forceFresh = false) {
+  try {
+    if (!forceFresh && lastMlResult) return lastMlResult;
 
-      form.append("moisture", sensors.moisture);
-      form.append("temperature", sensors.temp);
-      form.append("npk", sensors.npk);
-      form.append("ph", sensors.ph);
-      form.append("humidity", sensors.humidity || 50);
-      form.append("cropType", "generic"); // later: wheat, rice, etc.
+    const imgInput = document.getElementById("cropImage");
+    const form = new FormData();
 
-      if (imgInput && imgInput.files && imgInput.files[0]) {
-        form.append("image", imgInput.files[0]);
-      }
+    form.append("cropType", "Generic");
+    form.append("moisture", sensors.moisture);
+    form.append("temperature", sensors.temp);
+    form.append("npk", sensors.npk);
+    form.append("ph", sensors.ph);
+    form.append("humidity", sensors.humidity || 50);
 
-      const res = await fetch(API + "/ml/analyze", {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + (token || ""),
-          // DO NOT set Content-Type for FormData; browser sets boundary.
-        },
-        body: form
-      });
-
-      if (!res.ok) {
-        throw new Error("ML API failed: " + res.status);
-      }
-
-      const data = await res.json();
-      lastMlResult = data;
-      console.log("ML result:", data);
-      return data;
-
-    } catch (err) {
-      console.error(err);
-      alert("Prediction failed. Please try again.");
-      return null;
+    if (imgInput?.files?.[0]) {
+      form.append("image", imgInput.files[0]);
     }
+
+    const res = await fetch(API + "/ml/analyze", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + (token || "")
+      },
+      body: form
+    });
+
+    if (!res.ok) {
+      throw new Error("ML API ERROR: " + res.status);
+    }
+
+    const data = await res.json();
+    console.log("ML RESPONSE:", data);
+
+    lastMlResult = data.result; // stored from backend DB insert
+    return lastMlResult;
+
+  } catch (err) {
+    console.error(err);
+    alert("AI Prediction failed. Try again.");
+    return null;
   }
+}
+
+// ============================
+// Button + Voice handlers
+// ============================
+async function predictPrice() {
+  const data = await callML();
+  if (!data) return;
+  document.getElementById("priceValue").innerText = "₹ " + data.price;
+  speak("Price: ₹ " + data.price);
+}
+
+async function predictYield() {
+  const data = await callML();
+  if (!data) return;
+  document.getElementById("yieldValue").innerText = data.yieldPercent + "%";
+  speak("Yield is " + data.yieldPercent + " percent");
+}
+
+async function predictFertilizer() {
+  const data = await callML();
+  if (!data) return;
+  document.getElementById("fertValue").innerText = data.fertilizerSuggestion;
+  speak(data.fertilizerSuggestion);
+}
+
+async function checkQuality() {
+  lastMlResult = null;
+  const data = await callML(true);
+  if (!data) return;
+  const q = data.quality || "Unknown";
+  document.getElementById("qualityResult").innerText = "Quality: " + q;
+  speak("Quality " + q);
+}
+
+predictPriceBtn.onclick = predictPrice;
+predictYieldBtn.onclick = predictYield;
+predictFertBtn.onclick = predictFertilizer;
+checkQualityBtn.onclick = checkQuality;
+
 
   // ============================
   // UI helper to ensure result

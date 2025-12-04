@@ -1,76 +1,51 @@
-const { spawn } = require("child_process");
-const path = require("path");
+const axios = require("axios");
+const Prediction = require("../models/Prediction");
 
-// This controller sends data to a Python ML model and returns predictions.
-exports.analyzeCrop = async (req, res, next) => {
+const ML_SERVICE_URL = "https://agrolink-ai-2.onrender.com";
+
+exports.analyzeCrop = async (req, res) => {
   try {
+    const user = req.user;
     const {
+      cropType,
       moisture,
       temperature,
       npk,
       ph,
-      humidity,
-      cropType = "generic"
+      humidity
     } = req.body;
 
-    // If image was uploaded, pass the file path
-    const imagePath = req.file
-      ? path.join(__dirname, "..", "..", req.file.path)
-      : "none";
-
-    const pythonScript = path.join(__dirname, "../ml/predict.py");
-
-    const python = spawn("python", [
-      pythonScript,
+    // Call ML Render API
+    const response = await axios.post(`${ML_SERVICE_URL}/analyze`, {
+      cropType,
       moisture,
       temperature,
       npk,
       ph,
-      humidity,
+      humidity
+    });
+
+    const result = response.data;
+
+    // Save ML results into DB history
+    const saved = await Prediction.create({
+      userId: user._id,
       cropType,
-      imagePath
-    ]);
-
-    let output = "";
-    let errorOutput = "";
-
-    python.stdout.on("data", (data) => {
-      output += data.toString();
+      sensors: { moisture, temperature, npk, ph, humidity },
+      yieldPercent: result.yieldPercent,
+      price: result.price,
+      fertilizerSuggestion: result.fertilizerSuggestion,
+      quality: result.quality
     });
 
-    python.stderr.on("data", (data) => {
-      errorOutput += data.toString();
+    res.json({
+      success: true,
+      message: "Prediction done",
+      result: saved
     });
 
-    python.on("close", (code) => {
-      if (errorOutput.trim().length > 0) {
-        console.error("Python Error:", errorOutput);
-      }
-
-      try {
-        const result = JSON.parse(output);
-        return res.json({
-          success: true,
-          sensors: {
-            moisture: Number(moisture),
-            temperature: Number(temperature),
-            npk: Number(npk),
-            ph: Number(ph),
-            humidity: Number(humidity)
-          },
-          cropType,
-          ...result
-        });
-      } catch (err) {
-        console.error("ML Output Parse Error:", output);
-        return res.status(500).json({
-          success: false,
-          error: "Prediction output invalid",
-          raw: output
-        });
-      }
-    });
   } catch (err) {
-    next(err);
+    console.error("ML Service Error:", err.response?.data || err.message);
+    res.status(500).json({ success: false, error: "ML service failed" });
   }
 };
