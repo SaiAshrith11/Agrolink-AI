@@ -1,0 +1,7 @@
+services:
+  - name: agrolink-ml-api
+    type: web
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: "/predict"
