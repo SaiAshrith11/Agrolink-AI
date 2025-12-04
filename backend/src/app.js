@@ -1,5 +1,5 @@
-import mlRoutes from "./routes/ml.routes.js";
-app.use("/api/ml", mlRoutes);
+// ❌ Remove this — causes error
+
 
 require('dotenv').config();
 const express = require('express');

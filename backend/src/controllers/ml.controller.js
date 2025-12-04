@@ -1,51 +1,51 @@
-const axios = require("axios");
-const Prediction = require("../models/Prediction");
+// src/controllers/ml.controller.js
+const fetch = require("node-fetch");
+const FormData = require("form-data");
 
-const ML_SERVICE_URL = "https://agrolink-ai-2.onrender.com";
+const ML_SERVICE = process.env.ML_URL || "https://agrolink-ai-2.onrender.com/analyze";
 
-exports.analyzeCrop = async (req, res) => {
+exports.analyzeCrop = async (req, res, next) => {
   try {
-    const user = req.user;
+    const form = new FormData();
+
     const {
-      cropType,
       moisture,
       temperature,
       npk,
       ph,
-      humidity
+      humidity,
+      cropType
     } = req.body;
 
-    // Call ML Render API
-    const response = await axios.post(`${ML_SERVICE_URL}/analyze`, {
-      cropType,
-      moisture,
-      temperature,
-      npk,
-      ph,
-      humidity
+    form.append("moisture", moisture);
+    form.append("temperature", temperature);
+    form.append("npk", npk);
+    form.append("ph", ph);
+    form.append("humidity", humidity);
+    form.append("cropType", cropType || "generic");
+
+    if (req.file) {
+      form.append("image", req.file.buffer, {
+        filename: "crop.jpg",
+        contentType: req.file.mimetype
+      });
+    }
+
+    const response = await fetch(ML_SERVICE, {
+      method: "POST",
+      body: form
     });
 
-    const result = response.data;
-
-    // Save ML results into DB history
-    const saved = await Prediction.create({
-      userId: user._id,
-      cropType,
-      sensors: { moisture, temperature, npk, ph, humidity },
-      yieldPercent: result.yieldPercent,
-      price: result.price,
-      fertilizerSuggestion: result.fertilizerSuggestion,
-      quality: result.quality
-    });
+    const data = await response.json();
+    console.log("ML Service Response:", data);
 
     res.json({
       success: true,
-      message: "Prediction done",
-      result: saved
+      ...data
     });
 
   } catch (err) {
-    console.error("ML Service Error:", err.response?.data || err.message);
-    res.status(500).json({ success: false, error: "ML service failed" });
+    console.error(err);
+    res.status(500).json({ success: false, error: "ML Service failed" });
   }
 };

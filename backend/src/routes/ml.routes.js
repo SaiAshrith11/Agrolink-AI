@@ -1,35 +1,42 @@
-import express from "express";
-import fetch from "node-fetch";
-import { auth } from "../middleware/auth.js"; // if auth needed
+const express = require("express");
+const fetch = require("node-fetch");
+const multer = require("multer");
+const FormData = require("form-data");
+const { auth } = require("../middleware/auth.js");
 
 const router = express.Router();
+const upload = multer();
 
-const ML_URL = "https://agrolink-ai-2.onrender.com/analyze"; // FastAPI service
+const ML_URL = "https://agrolink-ai-2.onrender.com/analyze";
 
-router.post("/analyze", auth, async (req, res) => {
+// POST /api/ml/analyze
+router.post("/analyze", auth, upload.single("image"), async (req, res) => {
   try {
     const formData = new FormData();
 
+    // Append sensor fields
     for (const key in req.body) {
       formData.append(key, req.body[key]);
     }
 
-    if (req.files?.image) {
-      formData.append("image", req.files.image.data, req.files.image.name);
+    // Append image if sent
+    if (req.file) {
+      formData.append("image", req.file.buffer, req.file.originalname);
     }
 
-    const response = await fetch(ML_URL, {
+    const mlResponse = await fetch(ML_URL, {
       method: "POST",
-      body: formData
+      body: formData,
+      headers: formData.getHeaders()
     });
 
-    const data = await response.json();
-    return res.json(data);
+    const result = await mlResponse.json();
+    return res.json(result);
 
   } catch (err) {
-    console.error("ML request failed", err);
-    return res.status(500).json({ error: "ML Server not reachable" });
+    console.error("ML Analyze Error:", err);
+    return res.status(500).json({ error: "Could not reach ML server" });
   }
 });
 
-export default router;
+module.exports = router;
