@@ -5,6 +5,14 @@
   const user = JSON.parse(localStorage.getItem('agro_user') || '{}');
   if (!user || user.role !== 'consumer') { window.location.href = 'login.html'; return; }
 
+  // Auto-detect backend URL
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const BACKEND = window.BACKEND_BASE || (isLocalhost 
+    ? `http://${window.location.hostname}:4000` 
+    : "https://agrolink-ai-1.onrender.com");
+  const API = window.API_BASE || (BACKEND + "/api");
+  const token = user.token;
+
   let farmerProducts = JSON.parse(localStorage.getItem('farmer_products') || '[]');
   let cart = JSON.parse(localStorage.getItem('consumer_cart') || '[]');
   let orders = JSON.parse(localStorage.getItem('consumer_orders') || '[]');
@@ -90,7 +98,25 @@
     });
   }
 
+  // Fetch products from backend
+  async function loadProductsFromBackend() {
+    try {
+      const res = await fetch(API + '/products/all', {
+        headers: token ? { Authorization: 'Bearer ' + token } : {}
+      });
+      if (res.ok) {
+        const products = await res.json();
+        farmerProducts = products;
+        localStorage.setItem('farmer_products', JSON.stringify(products));
+        renderProducts();
+      }
+    } catch (err) {
+      console.error('Failed to load products:', err);
+    }
+  }
+
   // init
+  loadProductsFromBackend();
   renderProducts();
   renderCart();
   renderPastOrders();

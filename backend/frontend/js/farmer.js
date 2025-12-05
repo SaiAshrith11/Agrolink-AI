@@ -5,9 +5,13 @@
 
   console.log("farmer.js loaded");
 
-  const BACKEND = "https://agrolink-ai-1.onrender.com";
+  // Auto-detect backend URL
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const BACKEND = window.BACKEND_BASE || (isLocalhost 
+    ? `http://${window.location.hostname}:4000` 
+    : "https://agrolink-ai-1.onrender.com");
 
-  const API = BACKEND + "/api";
+  const API = window.API_BASE || (BACKEND + "/api");
 
   const user = JSON.parse(localStorage.getItem("agro_user") || "{}");
   const token = user.token || null;
@@ -410,92 +414,54 @@ setInterval(() => {
     await loadProducts();
   }
 
-   // ============================
-// ML API CALL (updated)
-// ============================
-let lastMlResult = null;
+  // ============================
+  // ML API CALL
+  // ============================
+  let lastMlResult = null;
 
-async function callML(forceFresh = false) {
-  try {
-    if (!forceFresh && lastMlResult) return lastMlResult;
+  async function callML(forceFresh = false) {
+    try {
+      if (!forceFresh && lastMlResult) return lastMlResult;
 
-    const imgInput = document.getElementById("cropImage");
-    const form = new FormData();
+      const imgInput = document.getElementById("cropImage");
+      const form = new FormData();
 
-    form.append("cropType", "Generic");
-    form.append("moisture", sensors.moisture);
-    form.append("temperature", sensors.temp);
-    form.append("npk", sensors.npk);
-    form.append("ph", sensors.ph);
-    form.append("humidity", sensors.humidity || 50);
+      form.append("cropType", "Generic");
+      form.append("moisture", sensors.moisture);
+      form.append("temperature", sensors.temp);
+      form.append("npk", sensors.npk);
+      form.append("ph", sensors.ph);
+      form.append("humidity", sensors.humidity || 50);
 
-    if (imgInput?.files?.[0]) {
-      form.append("image", imgInput.files[0]);
+      if (imgInput?.files?.[0]) {
+        form.append("image", imgInput.files[0]);
+      }
+
+      const res = await fetch(API + "/ml/analyze", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + (token || "")
+        },
+        body: form
+      });
+
+      if (!res.ok) {
+        throw new Error("ML API ERROR: " + res.status);
+      }
+
+      const data = await res.json();
+      console.log("ML RESPONSE:", data);
+
+      // Handle both response formats
+      lastMlResult = data.result || data;
+      return lastMlResult;
+
+    } catch (err) {
+      console.error(err);
+      alert("AI Prediction failed. Try again.");
+      return null;
     }
-
-    const res = await fetch(API + "/ml/analyze", {
-      method: "POST",
-      headers: {
-        Authorization: "Bearer " + (token || "")
-      },
-      body: form
-    });
-
-    if (!res.ok) {
-      throw new Error("ML API ERROR: " + res.status);
-    }
-
-    const data = await res.json();
-    console.log("ML RESPONSE:", data);
-
-    lastMlResult = data.result; // stored from backend DB insert
-    return lastMlResult;
-
-  } catch (err) {
-    console.error(err);
-    alert("AI Prediction failed. Try again.");
-    return null;
   }
-}
-
-// ============================
-// Button + Voice handlers
-// ============================
-async function predictPrice() {
-  const data = await callML();
-  if (!data) return;
-  document.getElementById("priceValue").innerText = "₹ " + data.price;
-  speak("Price: ₹ " + data.price);
-}
-
-async function predictYield() {
-  const data = await callML();
-  if (!data) return;
-  document.getElementById("yieldValue").innerText = data.yieldPercent + "%";
-  speak("Yield is " + data.yieldPercent + " percent");
-}
-
-async function predictFertilizer() {
-  const data = await callML();
-  if (!data) return;
-  document.getElementById("fertValue").innerText = data.fertilizerSuggestion;
-  speak(data.fertilizerSuggestion);
-}
-
-async function checkQuality() {
-  lastMlResult = null;
-  const data = await callML(true);
-  if (!data) return;
-  const q = data.quality || "Unknown";
-  document.getElementById("qualityResult").innerText = "Quality: " + q;
-  speak("Quality " + q);
-}
-
-predictPriceBtn.onclick = predictPrice;
-predictYieldBtn.onclick = predictYield;
-predictFertBtn.onclick = predictFertilizer;
-checkQualityBtn.onclick = checkQuality;
-
 
   // ============================
   // UI helper to ensure result
@@ -511,7 +477,7 @@ checkQualityBtn.onclick = checkQuality;
   async function predictPrice() {
     const data = await ensureMlResult();
     if (!data) return;
-    const p = data.price;
+    const p = data.price || 0;
     document.getElementById("priceValue").innerText = "₹ " + p;
     speak("Predicted price " + p);
   }
@@ -519,7 +485,7 @@ checkQualityBtn.onclick = checkQuality;
   async function predictYield() {
     const data = await ensureMlResult();
     if (!data) return;
-    const y = data.yieldPercent;
+    const y = data.yieldPercent || 0;
     document.getElementById("yieldValue").innerText = y + "%";
     speak("Predicted yield " + y + " percent");
   }
@@ -527,7 +493,7 @@ checkQualityBtn.onclick = checkQuality;
   async function predictFertilizer() {
     const data = await ensureMlResult();
     if (!data) return;
-    const msg = data.fertilizerSuggestion;
+    const msg = data.fertilizerSuggestion || "Balanced NPK recommended";
     document.getElementById("fertValue").innerText = msg;
     speak(msg);
   }
@@ -535,7 +501,7 @@ checkQualityBtn.onclick = checkQuality;
   async function checkQuality() {
     // For quality we force a fresh call so that new image is considered
     lastMlResult = null;
-    const data = await callML();
+    const data = await callML(true);
     if (!data) return;
 
     const q = data.quality || "UNKNOWN";

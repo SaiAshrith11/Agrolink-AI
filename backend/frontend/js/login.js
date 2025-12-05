@@ -13,8 +13,12 @@
     if (!username || !password) { alert('Please fill both fields'); return; }
 
     // Try real backend auth if available, else do local mock
+    const API_BASE = window.API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? `http://${window.location.hostname}:4000/api` 
+      : 'https://agrolink-ai-1.onrender.com/api');
+    
     try {
-      const res = await fetch('https://agrolink-ai-1.onrender.com/api/auth/login', {
+      const res = await fetch(API_BASE + '/auth/login', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ username, password })

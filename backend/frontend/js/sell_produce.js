@@ -10,7 +10,12 @@
     return;
   }
 
-  const API = "https://agrolink-ai-1.onrender.com/api";
+  // Auto-detect backend URL
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const BACKEND = window.BACKEND_BASE || (isLocalhost 
+    ? `http://${window.location.hostname}:4000` 
+    : "https://agrolink-ai-1.onrender.com");
+  const API = window.API_BASE || (BACKEND + "/api");
   const token = user.token;
 
   // DOM Elements

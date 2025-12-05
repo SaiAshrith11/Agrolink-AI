@@ -1,6 +1,29 @@
 // src/controllers/sale.controller.js
 const Sale = require('../models/sale');
 
+exports.createSale = async (req, res, next) => {
+  try {
+    const { productName, qty, total } = req.body;
+
+    if (!productName || !qty || !total) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const sale = new Sale({
+      farmer: req.user.id,
+      productName,
+      qty,
+      total,
+      date: new Date()
+    });
+
+    await sale.save();
+    res.status(201).json(sale);
+  } catch (err) {
+    next(err);
+  }
+};
+
 exports.listRecent = async (req, res, next) => {
   try {
     const sales = await Sale.find({ farmer: req.user.id })

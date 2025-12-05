@@ -11,8 +11,12 @@
     if (!username || !password) { alert('Please fill fields'); return; }
 
     // Try backend registration if exists
+    const API_BASE = window.API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? `http://${window.location.hostname}:4000/api` 
+      : 'https://agrolink-ai-1.onrender.com/api');
+    
     try {
-      const res = await fetch('https://agrolink-ai-1.onrender.com/api/auth/register', {
+      const res = await fetch(API_BASE + '/auth/register', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({ username, password, role })
