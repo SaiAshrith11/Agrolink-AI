@@ -138,6 +138,15 @@ def run_models(moisture, temperature, npk, ph, humidity, crop_type: str):
 def root():
     return {"status": "ok", "service": "AgroLink ML Service"}
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow frontend + backend requests
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/analyze")
 async def analyze(
